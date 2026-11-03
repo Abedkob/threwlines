@@ -8,20 +8,25 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test lib/billing-validation.test.ts lib/licensing-validation.test.ts lib/query-cache.test.ts lib/task-deletion.test.ts lib/contact-import.test.ts lib/pipeline.test.ts"
+    "test": "node --experimental-strip-types --test lib/billing-validation.test.ts lib/licensing-validation.test.ts lib/query-cache.test.ts lib/task-deletion.test.ts lib/contact-import.test.ts lib/pipeline.test.ts lib/db/query.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.1",
+    "bcryptjs": "^3.0.3",
     "cli": "^1.0.1",
     "exceljs": "^4.4.0",
+    "jose": "^6.2.15",
     "lucide-react": "^0.468.0",
     "next": "^15.2.4",
+    "pg": "^8.23.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "eslint": "^8.57.1",
