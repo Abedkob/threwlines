@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Check, Copy, KeyRound, ShieldCheck, X } from "lucide-react";
 import { apiFetch, jsonBody } from "@/lib/api/client";
+import { useDialogFocus } from "@/lib/useDialogFocus";
 import { validateEntitlementsJson, validateLicensePolicy } from "@/lib/licensing-validation";
 import type { Contact, Invoice, IssuedLicense, LicensedProduct, LicenseType } from "@/types/db";
 
@@ -21,6 +22,7 @@ export function IssueLicenseModal({ contacts, products, invoices, presetContactI
   onClose: () => void;
   onIssued: () => Promise<void>;
 }) {
+  const dialogRef = useDialogFocus<HTMLElement>(onClose);
   const firstProduct = products.find((product) => product.active);
   const [form, setForm] = useState({
     contact_id: presetContactId ?? "",
@@ -82,7 +84,7 @@ export function IssueLicenseModal({ contacts, products, invoices, presetContactI
 
   if (issued) return (
     <div className="modal-layer licensing-modal-layer" role="presentation">
-      <section className="modal issued-license-modal" role="dialog" aria-modal="true" aria-labelledby="issued-license-title">
+      <section ref={dialogRef} className="modal issued-license-modal" role="dialog" aria-modal="true" aria-labelledby="issued-license-title">
         <div className="issued-license-success"><span><ShieldCheck size={25} /></span><p className="eyebrow">License issued</p><h2 id="issued-license-title">Copy this key now</h2><p>The complete key is shown once. The vault stores only its cryptographic fingerprint.</p></div>
         <div className="issued-license-key"><KeyRound size={16} /><code>{issued.license_key}</code></div>
         <div className="license-one-time-note"><strong>One-time secret</strong><span>Save it in the customer&apos;s secure delivery channel. It cannot be recovered later.</span></div>
@@ -93,7 +95,7 @@ export function IssueLicenseModal({ contacts, products, invoices, presetContactI
 
   return (
     <div className="modal-layer licensing-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="modal issue-license-modal" role="dialog" aria-modal="true" aria-labelledby="issue-license-title">
+      <section ref={dialogRef} className="modal issue-license-modal" role="dialog" aria-modal="true" aria-labelledby="issue-license-title">
         <header className="modal-header"><div><p className="eyebrow">Customer entitlement</p><h2 id="issue-license-title">Issue a license</h2><p className="modal-subtitle">Connect the product, commercial record, and activation policy.</p></div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={18} /></button></header>
         <form onSubmit={save}>
           <div className="licensing-modal-body issue-license-grid">

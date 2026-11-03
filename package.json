@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test lib/billing-validation.test.ts lib/licensing-validation.test.ts lib/query-cache.test.ts lib/task-deletion.test.ts lib/contact-import.test.ts lib/pipeline.test.ts lib/db/query.test.ts lib/db/contacts.test.ts lib/db/billing.test.ts lib/auth/token.test.ts lib/storage/local.test.ts lib/design-tokens.test.ts lib/status-classes.test.ts lib/tailwind-variants.test.ts lib/api/route-guards.test.ts"
+    "test": "node --experimental-strip-types --test lib/billing-validation.test.ts lib/licensing-validation.test.ts lib/query-cache.test.ts lib/task-deletion.test.ts lib/contact-import.test.ts lib/pipeline.test.ts lib/db/query.test.ts lib/db/contacts.test.ts lib/db/billing.test.ts lib/auth/token.test.ts lib/storage/local.test.ts lib/design-tokens.test.ts lib/status-classes.test.ts lib/tailwind-variants.test.ts lib/api/route-guards.test.ts lib/ui-contracts.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

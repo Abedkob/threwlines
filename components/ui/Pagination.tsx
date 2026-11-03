@@ -82,6 +82,13 @@ export function Pagination({
             </button>
           ),
         )}
+        <button
+          onClick={() => onPageChange(page + 1)}
+          disabled={disabled || page >= totalPages}
+          aria-label="Next page"
+        >
+          <ChevronRight size={15} />
+        </button>
       </div>
       {onPageSizeChange && (
         <label className="page-size">

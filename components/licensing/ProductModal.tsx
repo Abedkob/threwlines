@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Box, X } from "lucide-react";
 import { apiFetch, jsonBody } from "@/lib/api/client";
+import { useDialogFocus } from "@/lib/useDialogFocus";
 import type { LicensedProduct } from "@/types/db";
 
 const initial = {
@@ -17,6 +18,7 @@ const initial = {
 };
 
 export function ProductModal({ product, onClose, onSaved }: { product?: LicensedProduct | null; onClose: () => void; onSaved: () => Promise<void> }) {
+  const dialogRef = useDialogFocus<HTMLElement>(onClose);
   const [form, setForm] = useState(product ? {
     name: product.name,
     code: product.code,
@@ -58,7 +60,7 @@ export function ProductModal({ product, onClose, onSaved }: { product?: Licensed
 
   return (
     <div className="modal-layer licensing-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="modal licensing-product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+      <section ref={dialogRef} className="modal licensing-product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
         <header className="modal-header">
           <div><p className="eyebrow">Product registry</p><h2 id="product-modal-title">{product ? "Edit licensed product" : "Add a licensed product"}</h2><p className="modal-subtitle">Set the activation and offline defaults inherited by new licenses.</p></div>
           <button className="icon-button" onClick={onClose} aria-label="Close"><X size={18} /></button>

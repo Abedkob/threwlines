@@ -10,11 +10,19 @@ export function useDialogFocus<T extends HTMLElement>(onClose: () => void) {
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
+  // Capture the opener during render, not inside the effect. React applies
+  // `autoFocus` while committing the dialog, which is before effects run — so
+  // reading document.activeElement in the effect returns the dialog's own
+  // first field, and closing then "restores" focus to a detached node and
+  // drops the user on <body>.
+  const openerRef = useRef<HTMLElement | null>(
+    typeof document === "undefined" || !(document.activeElement instanceof HTMLElement)
+      ? null
+      : document.activeElement,
+  );
+
   useEffect(() => {
-    const previous =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    const previous = openerRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -41,14 +49,19 @@ export function useDialogFocus<T extends HTMLElement>(onClose: () => void) {
     }
 
     document.addEventListener("keydown", keydown);
-    requestAnimationFrame(() => {
-      if (!dialogRef.current?.contains(document.activeElement))
-        dialogRef.current?.querySelector<HTMLElement>(focusable)?.focus();
-    });
+    // Focus synchronously: the DOM is committed by the time effects run, and
+    // requestAnimationFrame never fires while the tab is not painting, which
+    // would leave the dialog open with focus still behind it. The contains()
+    // check keeps a field's own autoFocus if it already took focus.
+    if (!dialogRef.current?.contains(document.activeElement)) {
+      dialogRef.current?.querySelector<HTMLElement>(focusable)?.focus();
+    }
     return () => {
       document.removeEventListener("keydown", keydown);
       document.body.style.overflow = previousOverflow;
-      previous?.focus();
+      // Only if it is still in the document; focusing a removed node silently
+      // leaves focus on <body>.
+      if (previous?.isConnected) previous.focus();
     };
   }, []);
 

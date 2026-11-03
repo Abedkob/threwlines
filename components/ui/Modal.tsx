@@ -52,6 +52,10 @@ export function Modal({ open, onClose, title, children, actions }: ModalProps) {
     // Keyboard has to be able to leave: Escape closes, and focus starts inside the dialog
     // rather than behind it. Focus returns to whatever opened the modal on close.
     const opener = document.activeElement as HTMLElement | null;
+    // The page behind an open dialog must not scroll: on a trackpad the
+    // content slides away under the overlay and the dialog appears to drift.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     dialog.current?.focus();
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -88,7 +92,8 @@ export function Modal({ open, onClose, title, children, actions }: ModalProps) {
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      opener?.focus();
+      document.body.style.overflow = previousOverflow;
+      if (opener?.isConnected) opener.focus();
     };
   }, [open]);
 

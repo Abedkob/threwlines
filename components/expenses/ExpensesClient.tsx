@@ -80,12 +80,14 @@ export function ExpensesClient() {
       setProfiles(profileData);
       setCategoryId((current) => current || categoryData[0]?.id || "");
       setPaidBy((current) => current || profileData[0]?.id || "");
+      return expenseData;
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
           : "Expenses could not be loaded.",
       );
+      return null;
     } finally {
       setLoading(false);
     }
@@ -459,7 +461,12 @@ export function ExpensesClient() {
           }}
           onDeleted={async () => {
             setEditing(null);
-            await load();
+            // Deleting the last row on a page leaves it empty; step back so the
+            // ledger does not read "51-50 of 50" with nothing under it.
+            const next = await load();
+            if (next && next.rows.length === 0 && next.total > 0 && requestedPage > 1) {
+              updateQuery({ page: requestedPage - 1 });
+            }
           }}
         />
       )}

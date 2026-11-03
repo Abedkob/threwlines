@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { apiFetch, jsonBody } from "@/lib/api/client";
+import { useDialogFocus } from "@/lib/useDialogFocus";
 import { fmtDay, maskedLicenseKey, money, relDate } from "@/lib/format";
 import type { License } from "@/types/db";
 
@@ -22,6 +23,7 @@ function patchLicense(id: string, patch: Record<string, unknown>) {
 }
 
 export function LicenseDetailDrawer({ licenseId, onClose, onChanged }: { licenseId: string; onClose: () => void; onChanged: () => Promise<void> }) {
+  const dialogRef = useDialogFocus<HTMLElement>(onClose);
   const [license, setLicense] = useState<License | null>(null);
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState("");
@@ -65,12 +67,12 @@ export function LicenseDetailDrawer({ licenseId, onClose, onChanged }: { license
     await run(() => patchLicense(licenseId, edit), "License policy updated.");
   }
 
-  if (!license) return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="contact-drawer license-detail-drawer"><header className="drawer-header"><div><p className="eyebrow">License registry</p><h2>Loading license</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={20} /></button></header><div className="feed-loading"><LoaderCircle size={17} className="spin-icon" /> Loading...</div>{message && <div className="drawer-error">{message}</div>}</aside></div>;
+  if (!license) return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside ref={dialogRef} className="contact-drawer license-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="license-loading-title"><header className="drawer-header"><div><p className="eyebrow">License registry</p><h2 id="license-loading-title">Loading license</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={20} /></button></header><div className="feed-loading"><LoaderCircle size={17} className="spin-icon" /> Loading...</div>{message && <div className="drawer-error">{message}</div>}</aside></div>;
 
   const activeActivations = license.activations?.filter((activation) => !activation.deactivated_at) ?? [];
   return (
     <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <aside className="contact-drawer license-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="license-detail-title">
+      <aside ref={dialogRef} className="contact-drawer license-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="license-detail-title">
         <header className="drawer-header license-detail-header"><div><p className="eyebrow">{license.product.code}</p><h2 id="license-detail-title">{license.product.name}</h2><span className={`license-state license-state-${license.effective_status}`}><i />{license.effective_status}</span></div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={20} /></button></header>
         <div className="drawer-body">
           <section className="license-key-pass"><div><small>Customer entitlement</small><code>{maskedLicenseKey(license)}</code></div><span>{license.license_type}</span></section>
