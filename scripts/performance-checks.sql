@@ -1,5 +1,6 @@
--- Run in the Supabase SQL editor after schema.sql and performance.sql.
--- These statements are read-only and expose the plans used by the paged lists.
+-- Read-only EXPLAIN probes for the common paged-list queries.
+-- Run against the local Postgres from psql (or any client) once
+-- scripts/local-schema.sql has been applied.
 
 explain (costs, verbose)
 select id, name, stage, last_touched_at
