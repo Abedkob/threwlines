@@ -1,5 +1,12 @@
+/* `legacy` must stay first: a later layer beats an earlier one regardless of specificity, so
+   this order is what lets a Tailwind utility override a hand-written legacy rule without
+   !important. Reorder it and every utility added from Task 6 onwards silently loses. */
 @layer legacy, theme, base, components, utilities;
 
+/* Tailwind is imported as theme.css + utilities.css rather than `@import "tailwindcss";` on
+   purpose: the bare import also pulls in preflight.css, whose reset would break the ~6,000
+   lines of legacy CSS below that are written against browser defaults. Do not collapse these
+   two imports back into one. */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "./legacy/globals.css" layer(legacy);
 @import "./legacy/shell.css" layer(legacy);
@@ -70,9 +77,21 @@
   --radius: 11px;
   --radius-lg: 18px;
   --shadow: 0 16px 45px rgba(25, 31, 48, 0.08);
+  /* Shell geometry. These are the single source: the legacy sheets must not redeclare them on
+     a root-scoped selector, because a declaration inside layer(legacy) can never win here. */
   --sidebar-width: 248px;
+  --sidebar-compact-width: 82px;
+  --mobile-nav-height: 72px;
 
   /* Keyboard focus rings: a 2px separator then a 2px solid ring. The dark variant is for controls on --ink surfaces. */
   --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
   --focus-ring-dark: 0 0 0 2px var(--ink), 0 0 0 4px var(--surface);
+}
+
+/* Moved out of the legacy sheet with the tokens above: layered beneath an unlayered base it
+   could never win. Same 72px as the base today, so this is a no-op until the values diverge. */
+@media (max-width: 820px) {
+  :root {
+    --mobile-nav-height: 72px;
+  }
 }

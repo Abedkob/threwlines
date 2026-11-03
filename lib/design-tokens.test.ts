@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { AA_TEXT_PAIRS, TOKENS, contrastRatio, countLegacyHex, LEGACY_HEX_BUDGET } from "./design-tokens.ts";
 
 // Rules live in the demoted `legacy` cascade layer; only tokens stay in the entry point.
+const LEGACY_SHEETS = ["globals", "login", "document-templates", "licensing", "shell"];
 const legacySheet = (name: string): string => readFileSync(`app/legacy/${name}.css`, "utf8");
 
 test("layout imports exactly one stylesheet", () => {
@@ -12,10 +13,49 @@ test("layout imports exactly one stylesheet", () => {
 });
 
 test("globals.css declares layer order with legacy lowest and omits Preflight", () => {
-  const css = readFileSync("app/globals.css", "utf8");
+  // Comments are stripped so the file can explain in prose why Preflight is excluded without
+  // the word "preflight" tripping the assertion below.
+  const css = readFileSync("app/globals.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   assert.match(css, /@layer legacy,\s*theme,\s*base,\s*components,\s*utilities;/);
+  assert.match(css, /@import "tailwindcss\/theme\.css" layer\(theme\);/);
   assert.match(css, /@import "tailwindcss\/utilities\.css" layer\(utilities\);/);
+  // Preflight is opted out of by importing theme.css and utilities.css separately.
+  // The bare `@import "tailwindcss";` is what pulls the reset in, and it contains no
+  // "preflight" substring, so it has to be matched directly.
+  assert.doesNotMatch(css, /@import\s+"tailwindcss"\s*;/);
   assert.doesNotMatch(css, /preflight/);
+});
+
+test("no tailwind config file exists", () => {
+  for (const ext of ["js", "cjs", "mjs", "ts"]) {
+    assert.equal(existsSync(`tailwind.config.${ext}`), false, `tailwind.config.${ext} should not exist`);
+  }
+});
+
+// A token declared on a root-scoped selector inside the `legacy` layer can never beat the
+// unlayered token block in app/globals.css, however late it appears. Before the layer
+// inversion such a declaration won by source order, so any that survive are silent value
+// changes. Tasks 7-12 delete legacy rules continuously; this keeps new ones from appearing.
+const ROOT_SCOPED = /^(?::root|html|body|\*)$/;
+
+test("no legacy sheet declares a custom property on a root-scoped selector", () => {
+  const offenders: string[] = [];
+  for (const name of LEGACY_SHEETS) {
+    // Comments are stripped first: one sitting above a selector lands in the prelude capture
+    // and would otherwise hide the rule behind it.
+    const css = legacySheet(name).replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const [, prelude, body] of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+      if (!/(?:^|[;{\s])--[\w-]+\s*:/.test(body)) {
+        continue;
+      }
+      for (const selector of prelude.split(",").map((s) => s.trim()).filter(Boolean)) {
+        if (ROOT_SCOPED.test(selector)) {
+          offenders.push(`${name}.css: ${selector} { ${body.trim().slice(0, 60)} }`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, []);
 });
 
 test("every legacy sheet is imported into the legacy layer", () => {
@@ -50,8 +90,7 @@ test("every token is declared in globals.css", () => {
 });
 
 test("legacy hardcoded hex count does not grow", () => {
-  const files = ["globals", "login", "document-templates", "licensing", "shell"];
-  const total = files.reduce((n, f) => n + countLegacyHex(legacySheet(f)), 0);
+  const total = LEGACY_SHEETS.reduce((n, f) => n + countLegacyHex(legacySheet(f)), 0);
   assert.ok(total <= LEGACY_HEX_BUDGET, `${total} hex literals exceeds budget ${LEGACY_HEX_BUDGET}`);
 });
 
