@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 15.2 (App Router), React 19, TypeScript strict, Tailwind CSS v4.3 via `@tailwindcss/postcss`, `node:test` for verification.
 
-**Spec:** None written separately. This plan is self-specifying: the Spec section below is the agreed scope, captured from the 2026-11-03 conversation that requested it.
+**Spec:** `docs/superpowers/specs/2026-11-03-throughline-design-direction.md` is the binding visual spec from Task 6 onward — read it before implementing any task that touches appearance. Scope is specified by this plan's own Spec section below, captured from the 2026-11-03 conversation.
 
 ---
 
@@ -22,11 +22,11 @@
 2. Every text/background pair in the UI meets WCAG AA (4.5:1 for body text, 3:1 for large text and UI borders).
 3. Keyboard focus is visible on every interactive element on every screen.
 4. New UI is written in Tailwind utilities; legacy CSS shrinks monotonically, enforced by a test.
-5. No visual regression on any existing screen, and no change at all to printed A4 invoice output until a task deliberately addresses it.
+5. Screens are redesigned as they convert, to the design direction — visual change is intended, not a regression. What must not change is behavior, information architecture, or the fields and actions a screen offers. Printed A4 invoice output stays byte-stable until Task 12 addresses it deliberately.
 
-**Non-goals.** Redesigning any screen. Changing component structure or data flow. Adding dark mode (the token structure must not preclude it, but no dark theme ships here). Adding a component library (shadcn/ui, Radix, Headless UI). Code-splitting the stylesheets.
+**Non-goals.** Changing what any screen does: its information architecture, its fields, its actions, its data flow, or the order of its sections. Redesign means color, type, spacing, density, component shape and state treatment — not rearranging the product. Adding dark mode (the token structure must not preclude it, but no dark theme ships here). Adding a component library (shadcn/ui, Radix, Headless UI). Code-splitting the stylesheets.
 
-**Anti-goals.** A half-migrated app where the same button is styled two ways and nobody knows which wins — this is the failure mode the `legacy` cascade layer and the ratchet test exist to prevent. A rewrite that cannot be stopped at a task boundary. Any change to invoice print output that reaches a customer unreviewed.
+**Anti-goals.** A half-migrated app where the same button is styled two ways and nobody knows which wins — this is the failure mode the `legacy` cascade layer and the ratchet test exist to prevent. A rewrite that cannot be stopped at a task boundary. Any change to invoice print output that reaches a customer unreviewed. Five screens that each look like a different product, which is what redesign freedom produces without a single written direction — the reason the design direction spec is binding rather than advisory.
 
 **Decisions made while planning (the planner's call, not the user's):** Tailwind v4 with CSS-first `@theme` config rather than v3 plus `tailwind.config.ts`; Preflight disabled until Phase C completes; legacy CSS demoted via `@layer` rather than deleted up front; the Throughline palette from the same conversation used as the token values; print CSS converted last and kept as hand-written CSS permanently.
 
@@ -39,6 +39,7 @@
 - Token values are fixed by this plan: ink `#14171F`, canvas `#F5F7FA`, surface `#FFFFFF`, line `#DFE3EB`, primary `#3449E0`, primary-pressed `#2537B8`, primary-wash `#ECEFFE`, accent-line `#B9FF00`, success `#15775B`, warning `#9A5B00`, danger `#C0352A`, muted `#6B7280`, text `#20232C`.
 - Never interpolate a Tailwind utility name into a template literal. Tailwind v4 scans source text and cannot see `` `status-${s}` ``; utilities must appear as complete literal strings, so dynamic variants resolve through a `Record<Status, string>` lookup.
 - No visual change to `app/document-templates.css` or any `@media print` block before Task 12.
+- From Task 6 onward, `docs/superpowers/specs/2026-11-03-throughline-design-direction.md` is binding on appearance: its color roles, two-family type system, four-size type scale, 8px grid, 36px row height, radius scale, overlay-only shadows, the 3px lifecycle left edge, and its motion and writing rules. A task may not invent a visual treatment the direction does not describe; if the direction is silent on something the task needs, the implementer reports it rather than choosing.
 
 ## Review Focus
 
@@ -394,7 +395,7 @@ Expected: FAIL — cannot find module `./status-classes.ts`.
 
 - [ ] **Step 3: Implement `lib/status-classes.ts` as an explicit `Record` of complete utility strings, then the three primitives**
 
-Status values come from `types/db.ts`. Each primitive renders Tailwind utilities only, reading colors through the Task 5 theme names, and keeps the existing DOM shape (`Button` renders a bare `<button>`) so no layout shifts. Variants match the legacy classes one for one: `primary`, `secondary`, `danger`, `icon`.
+Status values come from `types/db.ts`. Each primitive renders Tailwind utilities only, reading colors through the Task 5 theme names, and keeps the existing DOM shape (`Button` renders a bare `<button>`) so markup stays swappable. Build the primitives to the design direction's Components section — 32px control height, 6px control radius, 13px labels, sentence case, verb-first, one `primary` per view, no arrow glyphs in labels — not to the legacy classes' current appearance. The four `Button` variants keep the legacy names (`primary`, `secondary`, `danger`, `icon`) because 144 call sites refer to them, but their look comes from the direction.
 
 - [ ] **Step 4: Verify and commit — primitives only, no call sites converted yet**
 
@@ -407,7 +408,9 @@ git commit -m "Add Tailwind UI primitives and status class lookup"
 
 ### Tasks 7–11: One screen per task
 
-Each task takes one screen, replaces its markup with the Task 6 primitives and Tailwind utilities, deletes the now-dead rules from the matching `app/legacy/*.css` region, and lowers `LEGACY_HEX_BUDGET` to the new measured count. Order is by risk, lowest first; none of these touch invoice print output.
+Each task takes one screen, rebuilds its markup to the design direction using the Task 6 primitives and Tailwind utilities, deletes the now-dead rules from the matching `app/legacy/*.css` region, and lowers `LEGACY_HEX_BUDGET` to the new measured count. Order is by risk, lowest first; none of these touch invoice print output.
+
+The screen keeps every field, action, column and section it has today, in the same order. What changes is how it looks: the 8px grid, the 36px data row, tabular figures on every number, the 3px lifecycle left edge replacing the ad-hoc `heat-*` and `priority-border-*` treatments, the four-size type scale, overlay-only shadows, and the removal of `eyebrow` labels.
 
 | Task | Screen | Components | Legacy region |
 |---|---|---|---|
@@ -419,12 +422,12 @@ Each task takes one screen, replaces its markup with the Task 6 primitives and T
 
 **Steps, identical for each — substitute the screen:**
 
-- [ ] **Step 1: Record the baseline** — screenshot the screen at 375px and 1280px before touching it.
+- [ ] **Step 1: Record the inventory** — list the screen's fields, actions, columns and sections before touching it, and put the list in the report. This is the contract the redesign must preserve; it replaces a visual baseline, which cannot be captured here because the app has no `.env.local` and cannot reach Supabase.
 - [ ] **Step 2: Lower the budget first** — set `LEGACY_HEX_BUDGET` to the count that will remain once this screen's rules are deleted, run `npm test`, and confirm it FAILS. This is the task's failing test.
-- [ ] **Step 3: Convert the markup** — replace `.button`, `.field` and `.modal` usages with the Task 6 primitives, remaining classes with utilities, and every `` `x-${v}` `` expression with a `Record` lookup.
+- [ ] **Step 3: Rebuild the markup to the direction** — replace `.button`, `.field` and `.modal` usages with the Task 6 primitives, remaining classes with utilities that implement the direction, and every `` `x-${v}` `` expression with a `Record` lookup. Report any treatment the direction does not cover rather than inventing one.
 - [ ] **Step 4: Delete the screen's rules** from its `app/legacy/*.css` region.
 - [ ] **Step 5: Run the suite** — `npm test && npm run typecheck && npm run lint && npm run build`; the budget test now PASSES.
-- [ ] **Step 6: Compare against the baseline** at 375px and 1280px. Any difference must be deliberate and listed in the commit message.
+- [ ] **Step 6: Check against the inventory and the direction** — every field, action, column and section from Step 1 is still present and in order, and each of the direction's Components and Layout rules is either met or reported as unmet with a reason. Visual confirmation in a browser is the user's, at the end.
 - [ ] **Step 7: Commit** — `git commit -m "Convert <screen> to Tailwind"`.
 
 ### Task 12: Invoices, print, and Preflight
@@ -460,6 +463,8 @@ test("no legacy stylesheets remain and Preflight is enabled", () => {
 - [ ] **Step 5: Print-verify every template** — each template in `components/billing/templates/`, both orientations, printed to PDF and compared against the Task 4 baselines. Any difference blocks the commit.
 
 - [ ] **Step 6: Replace the ratchet** — `countLegacyHex` across `app/` must now equal 0, except `app/print.css`, which is exempt by name.
+
+- [ ] **Step 6b: Drop Space Grotesk** — remove it from the Google Fonts `@import` in `app/globals.css` and assert in the test suite that no `font-family` declaration or Tailwind class references it anywhere under `app/` or `components/`. This lands last on purpose: each screen task stops using the face as it converts, and pulling the `@import` any earlier would drop unconverted screens to a system fallback mid-migration.
 
 - [ ] **Step 7: Run the full suite and commit**
 
