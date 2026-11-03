@@ -1,13 +1,15 @@
 import type { AppRole, Profile } from "@/types/db";
 import { query, queryOne } from "./query.ts";
 
+const PROFILE_COLS = "id, name, color, app_role, created_at";
+
 export async function listProfiles(): Promise<Profile[]> {
-  const { rows } = await query<Profile>("select * from profiles order by name");
+  const { rows } = await query<Profile>(`select ${PROFILE_COLS} from profiles order by name`);
   return rows;
 }
 
 export async function getProfile(id: string): Promise<Profile | null> {
-  return queryOne<Profile>("select * from profiles where id = $1", [id]);
+  return queryOne<Profile>(`select ${PROFILE_COLS} from profiles where id = $1`, [id]);
 }
 
 export async function getCurrentUserRole(userId: string): Promise<AppRole> {
