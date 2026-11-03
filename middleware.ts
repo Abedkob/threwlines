@@ -4,7 +4,7 @@ import { verifySessionToken } from "@/lib/auth/token";
 
 // Exact-match endpoints that must bypass the session check.
 // Must stay narrow — anything added here is unauthenticated.
-const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout"]);
+const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout", "/api/health"]);
 
 // Path prefixes for public API surfaces. The licensing API is called by
 // third-party customer applications that carry no session cookie.
