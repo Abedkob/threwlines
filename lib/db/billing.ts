@@ -60,8 +60,8 @@ export async function listTemplates() {
   return rows;
 }
 
-export async function saveTemplate(template: Partial<DocumentTemplate>, id?: string | null) {
-  const result = await rpc<string>("save_document_template", [template, id ?? null]);
+export async function saveTemplate(userId: string, template: Partial<DocumentTemplate>, id?: string | null) {
+  const result = await rpc<string>("save_document_template", [userId, template, id ?? null]);
   invalidateBrowserQueries(["reference:templates"]);
   return result;
 }
