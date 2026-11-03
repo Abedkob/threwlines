@@ -9,7 +9,6 @@ import { query, queryCount } from "./query.ts";
 import {
   deleteRow,
   insertRow,
-  notifyDataChanged,
   pageBounds,
   paged,
   updateRow,
@@ -85,7 +84,6 @@ export async function createTask(
   },
 ) {
   await insertRow("tasks", { ...input, created_by: userId, status: "open" }, "id");
-  notifyDataChanged();
 }
 
 export async function updateTask(
@@ -99,12 +97,10 @@ export async function updateTask(
   }>,
 ) {
   await updateRow("tasks", id, input);
-  notifyDataChanged();
 }
 
 export async function deleteTask(id: string) {
   await deleteRow("tasks", id);
-  notifyDataChanged();
 }
 
 export async function addTaskItem(
@@ -125,7 +121,6 @@ export async function addTaskItem(
     },
     "id",
   );
-  notifyDataChanged();
 }
 
 export async function updateTaskItem(
@@ -133,10 +128,8 @@ export async function updateTaskItem(
   input: Partial<Pick<TaskItem, "content" | "done" | "sort_order">>,
 ) {
   await updateRow("task_items", id, input);
-  notifyDataChanged();
 }
 
 export async function deleteTaskItem(id: string) {
   await deleteRow("task_items", id);
-  notifyDataChanged();
 }

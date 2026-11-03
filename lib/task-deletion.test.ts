@@ -1,37 +1,50 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { deleteTask, deleteTaskItem } from "./db.ts";
+import { deleteTask, deleteTaskItem } from "./db/tasks.ts";
 
-function deletionClient(expectedTable: string, expectedId: string, message?: string) {
-  return {
-    from(table: string) {
-      assert.equal(table, expectedTable);
-      return {
-        delete() {
-          return {
-            async eq(column: string, id: string) {
-              assert.equal(column, "id");
-              assert.equal(id, expectedId);
-              return { error: message ? { message } : null };
-            },
-          };
-        },
-      };
+type Call = { sql: string; params: unknown[] | undefined };
+
+// deleteRow runs through the shared pool, so a fake pool on globalThis captures
+// the SQL without a database. The pool module reads it lazily at call time.
+function withFakePool(
+  run: (calls: Call[]) => Promise<void>,
+  failure?: string,
+) {
+  const holder = globalThis as Record<string, unknown>;
+  const previous = holder.__vaultPgPool;
+  const calls: Call[] = [];
+  holder.__vaultPgPool = {
+    async query(sql: string, params?: unknown[]) {
+      calls.push({ sql, params });
+      if (failure) throw new Error(failure);
+      return { rows: [], rowCount: 1 };
     },
-  } as any;
+  };
+  return run(calls).finally(() => {
+    holder.__vaultPgPool = previous;
+  });
 }
 
 test("task deletion targets only the selected task", async () => {
-  await deleteTask(deletionClient("tasks", "task-1"), "task-1");
+  await withFakePool(async (calls) => {
+    await deleteTask("task-1");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].sql, "delete from tasks where id = $1");
+    assert.deepEqual(calls[0].params, ["task-1"]);
+  });
 });
 
 test("checklist deletion targets only the selected item", async () => {
-  await deleteTaskItem(deletionClient("task_items", "item-1"), "item-1");
+  await withFakePool(async (calls) => {
+    await deleteTaskItem("item-1");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].sql, "delete from task_items where id = $1");
+    assert.deepEqual(calls[0].params, ["item-1"]);
+  });
 });
 
-test("task deletion reports Supabase failures", async () => {
-  await assert.rejects(
-    deleteTask(deletionClient("tasks", "task-2", "Deletion denied"), "task-2"),
-    /Deletion denied/,
-  );
+test("task deletion reports database failures", async () => {
+  await withFakePool(async () => {
+    await assert.rejects(deleteTask("task-2"), /Deletion denied/);
+  }, "Deletion denied");
 });

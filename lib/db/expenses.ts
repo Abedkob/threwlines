@@ -8,7 +8,6 @@ import { query, queryCount, rpc } from "./query.ts";
 import {
   deleteRow,
   insertRow,
-  notifyDataChanged,
   pageBounds,
   paged,
   updateRow,
@@ -77,17 +76,14 @@ export async function listExpenseCategories(): Promise<ExpenseCategory[]> {
 
 export async function createExpense(userId: string, input: ExpenseInput) {
   await insertRow("expenses", { ...input, created_by: userId }, "id");
-  notifyDataChanged();
 }
 
 export async function updateExpense(id: string, input: ExpenseInput) {
   await updateRow("expenses", id, input);
-  notifyDataChanged();
 }
 
 export async function deleteExpense(id: string) {
   await deleteRow("expenses", id);
-  notifyDataChanged();
 }
 
 export async function assertUniqueName(
@@ -110,13 +106,11 @@ export async function assertUniqueName(
 export async function createExpenseCategory(name: string) {
   await assertUniqueName("expense_categories", name);
   await insertRow("expense_categories", { name: name.trim() }, "id");
-  notifyDataChanged();
 }
 
 export async function updateExpenseCategory(id: string, name: string) {
   await assertUniqueName("expense_categories", name, id);
   await updateRow("expense_categories", id, { name: name.trim() });
-  notifyDataChanged();
 }
 
 export async function deleteExpenseCategory(id: string) {
@@ -129,5 +123,4 @@ export async function deleteExpenseCategory(id: string) {
   if (used)
     throw new Error("This category is used by an expense and cannot be deleted.");
   await deleteRow("expense_categories", id);
-  notifyDataChanged();
 }

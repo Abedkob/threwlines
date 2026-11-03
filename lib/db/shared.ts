@@ -1,15 +1,7 @@
 import type { PagedResult } from "@/types/db";
 import { query, queryOne } from "./query.ts";
-import { invalidateBrowserQueries } from "../query-cache.ts";
 
 const IDENTIFIER = /^[a-z_][a-z0-9_]*$/i;
-
-export function notifyDataChanged() {
-  if (typeof window !== "undefined") {
-    invalidateBrowserQueries();
-    window.dispatchEvent(new Event("idevelopit-vault:data-changed"));
-  }
-}
 
 export function pageBounds(page: number, pageSize: number) {
   const safePage = Math.max(1, Math.floor(page) || 1);

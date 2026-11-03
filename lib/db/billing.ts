@@ -9,15 +9,7 @@ import type {
 } from "@/types/db";
 import { query, queryOne, rpc } from "./query.ts";
 import { deleteRow, pageBounds, paged } from "./shared.ts";
-import { invalidateBrowserQueries } from "../query-cache.ts";
 import { getFileUrl, uploadFile } from "../storage/local.ts";
-
-function notifyBillingChanged() {
-  if (typeof window === "undefined") return;
-  invalidateBrowserQueries();
-  window.dispatchEvent(new Event("idevelopit-vault:billing-changed"));
-  window.dispatchEvent(new Event("idevelopit-vault:data-changed"));
-}
 
 const CONTACT_SUMMARY = "json_build_object('id', c.id, 'name', c.name, 'billing_name', c.billing_name)";
 const CONTACT_FULL = `json_build_object('id', c.id, 'name', c.name, 'billing_name', c.billing_name,
@@ -62,14 +54,12 @@ export async function listTemplates() {
 
 export async function saveTemplate(userId: string, template: Partial<DocumentTemplate>, id?: string | null) {
   const result = await rpc<string>("save_document_template", [userId, template, id ?? null]);
-  invalidateBrowserQueries(["reference:templates"]);
   return result;
 }
 
 export async function deleteTemplate(template: DocumentTemplate) {
   if (template.is_default) throw new Error("Choose another default before deleting this template.");
   await deleteRow("document_templates", template.id);
-  invalidateBrowserQueries(["reference:templates"]);
 }
 
 export async function listContracts() {
@@ -102,7 +92,6 @@ export async function createInvoice(
   items: BillingLineInput[],
 ) {
   const result = await rpc<string>("create_invoice", [userId, invoice, items]);
-  notifyBillingChanged();
   return result;
 }
 
@@ -113,17 +102,14 @@ export async function updateInvoice(
   items: BillingLineInput[],
 ) {
   await rpc("admin_update_invoice", [userId, id, invoice, items]);
-  notifyBillingChanged();
 }
 
 export async function deleteInvoice(userId: string, id: string) {
   await rpc("delete_invoice", [userId, id]);
-  notifyBillingChanged();
 }
 
 export async function cancelInvoice(userId: string, id: string) {
   await rpc("cancel_invoice", [userId, id]);
-  notifyBillingChanged();
 }
 
 export async function createInvoiceFromContract(
@@ -211,7 +197,6 @@ export async function getInvoice(id: string) {
 
 export async function finalizeInvoice(userId: string, id: string) {
   await rpc("finalize_invoice", [userId, id]);
-  notifyBillingChanged();
 }
 
 export async function recordInvoicePayment(
@@ -234,7 +219,6 @@ export async function recordInvoicePayment(
     input.transactionReference || null,
     input.notes || null,
   ]);
-  notifyBillingChanged();
 }
 
 export async function listContactInvoiceLedger(contactId: string) {

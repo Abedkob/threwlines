@@ -1,29 +1,29 @@
 # idevelopit-vault Licensing API
 
-The licensing API is served by the `license-api` Supabase Edge Function. Its database service credential and signing private key remain server-side.
+The licensing API is served by the Next.js route handlers under `/api/license/v1/`, backed by the local PostgreSQL database. Its database credential and signing private key remain server-side.
 
 ## Deploy
 
-1. Run `scripts/licensing-foundation.sql` in the Supabase SQL editor.
+1. Apply `scripts/local-schema.sql` to the database named by `DATABASE_URL`. It includes the licensing tables.
 2. Run `node scripts/generate-license-signing-keys.mjs` locally. Do not commit the generated private JWK.
-3. Store the three printed values as Supabase Edge Function secrets:
+3. Set the printed values, plus `LICENSE_ALLOWED_ORIGINS`, in the server environment (for example `.env.local`):
 
    ```bash
-   supabase secrets set LICENSE_SIGNING_KEY_ID=idv-license-1
-   supabase secrets set LICENSE_SIGNING_PRIVATE_JWK='<private JWK JSON>'
-   supabase secrets set LICENSE_SIGNING_PUBLIC_JWK='<public JWK JSON>'
-   supabase secrets set LICENSE_ALLOWED_ORIGINS='https://your-app.example'
+   LICENSE_SIGNING_KEY_ID=idv-license-1
+   LICENSE_SIGNING_PRIVATE_JWK='<private JWK JSON>'
+   LICENSE_SIGNING_PUBLIC_JWK='<public JWK JSON>'
+   LICENSE_ALLOWED_ORIGINS=https://your-app.example
    ```
 
-4. Deploy with `supabase functions deploy license-api --no-verify-jwt`.
+4. Start the app (`npm run build && npm start`).
 5. Run `scripts/licensing-verification.sql` and make one test activation.
 
-Hosted Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the function. Never place either the service role or private signing JWK in `NEXT_PUBLIC_*` variables.
+Never place the database credential, `JWT_SECRET`, or the private signing JWK in `NEXT_PUBLIC_*` variables.
 
 ## Base URL
 
 ```text
-https://PROJECT_REF.supabase.co/functions/v1/license-api/v1
+https://YOUR_HOST/api/license/v1
 ```
 
 All POST bodies are JSON. Save the `activation_token` returned by activation and send it as `Authorization: Bearer TOKEN` for later calls. Generate and persist an installation UUID when the application first runs; do not use raw hardware identifiers.

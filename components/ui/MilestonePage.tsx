@@ -9,7 +9,7 @@ export function MilestonePage({ section }: { section: string }) {
         <h2>{section} is queued for the next build pass.</h2>
         <p>
           The authenticated application shell is ready. This surface will be
-          connected to Supabase after the visual checkpoint requested in the
+          connected to the local database after the visual checkpoint requested in the
           brief.
         </p>
       </div>

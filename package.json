@@ -11,8 +11,6 @@
     "test": "node --experimental-strip-types --test lib/billing-validation.test.ts lib/licensing-validation.test.ts lib/query-cache.test.ts lib/task-deletion.test.ts lib/contact-import.test.ts lib/pipeline.test.ts lib/db/query.test.ts lib/db/contacts.test.ts lib/db/billing.test.ts lib/auth/token.test.ts lib/storage/local.test.ts"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.1",
     "bcryptjs": "^3.0.3",
     "cli": "^1.0.1",
     "exceljs": "^4.4.0",
@@ -31,7 +29,6 @@
     "@types/react-dom": "^19.0.2",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.22",
-    "supabase": "^2.111.0",
     "typescript": "^5.7.2"
   },
   "overrides": {

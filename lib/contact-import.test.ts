@@ -6,7 +6,7 @@ import {
   type RawContactImportRow,
 } from "./contact-import.ts";
 import { buildContactTemplate, parseContactWorkbook } from "./contact-xlsx.ts";
-import { createContacts } from "./db.ts";
+import { createContacts } from "./db/contacts.ts";
 
 const profiles = [
   {
@@ -126,29 +126,24 @@ test("generated template round-trips a completed contact", async () => {
 });
 
 test("bulk contact creation uses one insert and stamps the current user", async () => {
-  let inserted: any[] = [];
-  const client = {
-    auth: {
-      async getClaims() {
-        return { data: { claims: { sub: "user-1" } }, error: null };
-      },
+  const holder = globalThis as Record<string, unknown>;
+  const previous = holder.__vaultPgPool;
+  const calls: { sql: string; params: unknown[] | undefined }[] = [];
+  holder.__vaultPgPool = {
+    async query(sql: string, params?: unknown[]) {
+      calls.push({ sql, params });
+      return { rows: [{ id: "contact-1" }], rowCount: 1 };
     },
-    from(table: string) {
-      assert.equal(table, "contacts");
-      return {
-        insert(payload: any[]) {
-          inserted = payload;
-          return {
-            async select(column: string) {
-              assert.equal(column, "id");
-              return { data: payload.map((_, index) => ({ id: `contact-${index + 1}` })), error: null };
-            },
-          };
-        },
-      };
-    },
-  } as any;
-  const ids = await createContacts(client, [{
+  };
+  try {
+    await runBulkCreate(calls);
+  } finally {
+    holder.__vaultPgPool = previous;
+  }
+});
+
+async function runBulkCreate(calls: { sql: string; params: unknown[] | undefined }[]) {
+  const ids = await createContacts("user-1", [{
     name: "Imported",
     stage: "new",
     assigned_to: null,
@@ -163,5 +158,7 @@ test("bulk contact creation uses one insert and stamps the current user", async 
     notes: null,
   }]);
   assert.deepEqual(ids, ["contact-1"]);
-  assert.equal(inserted[0].created_by, "user-1");
-});
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /^insert into contacts \(/);
+  assert.equal(calls[0].params?.at(-1), "user-1");
+}

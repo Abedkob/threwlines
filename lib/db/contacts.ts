@@ -21,7 +21,6 @@ import {
 import { query, queryCount, queryOne, rpc } from "./query.ts";
 import {
   insertRow,
-  notifyDataChanged,
   pageBounds,
   paged,
   updateRow,
@@ -316,7 +315,6 @@ export async function createContact(
     { ...input, created_by: userId },
     "id",
   );
-  notifyDataChanged();
   return row.id;
 }
 
@@ -345,13 +343,11 @@ export async function createContacts(
   );
   if (rows.length !== inputs.length)
     throw new Error("The imported contact count could not be verified.");
-  notifyDataChanged();
   return rows.map((row) => row.id);
 }
 
 export async function updateContact(id: string, input: ContactUpdate) {
   await updateRow("contacts", id, input);
-  notifyDataChanged();
 }
 
 export async function moveContact(
@@ -370,7 +366,6 @@ export async function moveContact(
     },
     "id",
   );
-  notifyDataChanged();
 }
 
 export async function addActivity(
@@ -385,13 +380,11 @@ export async function addActivity(
     channel,
     note,
   });
-  notifyDataChanged();
   return row;
 }
 
 export async function addPayment(input: NewPaymentInput): Promise<Payment> {
   const row = await insertRow<Payment>("payments", { ...input });
-  notifyDataChanged();
   return { ...row, amount: Number(row.amount) };
 }
 

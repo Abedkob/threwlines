@@ -6,7 +6,7 @@ import type {
 } from "@/types/db";
 import { query, queryCount, queryOne, rpc } from "./query.ts";
 import { assertUniqueName } from "./expenses.ts";
-import { deleteRow, insertRow, notifyDataChanged, updateRow } from "./shared.ts";
+import { deleteRow, insertRow, updateRow } from "./shared.ts";
 
 type ServiceInput = Pick<
   Service,
@@ -25,13 +25,11 @@ export async function listServices(): Promise<Service[]> {
 export async function createService(input: ServiceInput) {
   await assertUniqueName("services", input.name);
   await insertRow("services", { ...input, name: input.name.trim() }, "id");
-  notifyDataChanged();
 }
 
 export async function updateService(id: string, input: ServiceInput) {
   await assertUniqueName("services", input.name, id);
   await updateRow("services", id, { ...input, name: input.name.trim() });
-  notifyDataChanged();
 }
 
 export async function deleteService(id: string) {
@@ -47,7 +45,6 @@ export async function deleteService(id: string) {
       "This service is already in financial history. Mark it inactive instead.",
     );
   await deleteRow("services", id);
-  notifyDataChanged();
 }
 
 export async function getNavigationCounts(): Promise<NavigationCounts> {

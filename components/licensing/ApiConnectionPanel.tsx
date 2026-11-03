@@ -24,8 +24,8 @@ const operations = [
 ];
 
 export function ApiConnectionPanel({ products, onClose }: { products: LicensedProduct[]; onClose: () => void }) {
-  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
-  const apiBase = projectUrl ? `${projectUrl}/functions/v1/license-api/v1` : "Supabase URL is not configured";
+  const projectUrl = typeof window === "undefined" ? "" : window.location.origin;
+  const apiBase = `${projectUrl}/api/license/v1`;
   const [productId, setProductId] = useState(products.find((product) => product.active)?.id ?? products[0]?.id ?? "");
   const [copied, setCopied] = useState("");
   const [checking, setChecking] = useState(false);

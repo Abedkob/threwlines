@@ -6,14 +6,6 @@ import type {
   LicensedProduct,
 } from "@/types/db";
 import { query, queryOne, rpc } from "./query.ts";
-import { invalidateBrowserQueries } from "../query-cache.ts";
-
-function notifyLicensingChanged() {
-  if (typeof window === "undefined") return;
-  invalidateBrowserQueries();
-  window.dispatchEvent(new Event("idevelopit-vault:licensing-changed"));
-  window.dispatchEvent(new Event("idevelopit-vault:data-changed"));
-}
 
 function licenseNumbers(row: any) {
   return {
@@ -37,7 +29,6 @@ export async function saveLicensedProduct(
   id?: string | null,
 ) {
   const result = await rpc<string>("save_licensed_product", [userId, product, id ?? null]);
-  notifyLicensingChanged();
   return result;
 }
 
@@ -76,7 +67,6 @@ export async function getLicenseDetails(licenseId: string) {
 
 export async function issueLicense(userId: string, license: Record<string, unknown>) {
   const result = await rpc<IssuedLicense>("issue_license", [userId, license]);
-  notifyLicensingChanged();
   return result;
 }
 
@@ -86,7 +76,6 @@ export async function updateLicense(
   patch: Record<string, unknown>,
 ) {
   await rpc("admin_update_license", [userId, licenseId, patch]);
-  notifyLicensingChanged();
 }
 
 export async function deactivateLicenseActivation(
@@ -95,12 +84,10 @@ export async function deactivateLicenseActivation(
   reason = "Removed by superadmin",
 ) {
   await rpc("admin_deactivate_license_activation", [userId, activationId, reason]);
-  notifyLicensingChanged();
 }
 
 export async function resetLicenseActivations(userId: string, licenseId: string) {
   await rpc("admin_reset_license_activations", [userId, licenseId]);
-  notifyLicensingChanged();
 }
 
 export function maskedLicenseKey(license: Pick<License, "key_prefix" | "key_last_four">) {
