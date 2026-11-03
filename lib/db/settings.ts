@@ -86,3 +86,37 @@ export async function getDashboardSummary(userId: string): Promise<DashboardSumm
 export async function getAppSettings(): Promise<AppSettings | null> {
   return queryOne<AppSettings>("select * from app_settings where id = 1");
 }
+
+const APP_SETTINGS_COLUMNS = [
+  "company_name",
+  "company_tagline",
+  "company_phone",
+  "company_email",
+  "company_website",
+  "logo_url",
+  "stamp_url",
+  "invoice_prefix",
+  "next_invoice_number",
+  "invoice_number_padding",
+  "default_currency",
+  "default_due_days",
+  "default_terms",
+  "default_footer",
+  "default_payment_instructions",
+  "cash_enabled",
+  "omt_enabled",
+  "omt_recipient_name",
+  "omt_phone",
+  "whish_enabled",
+  "whish_recipient_name",
+  "whish_phone",
+] as const;
+
+export async function saveAppSettings(userId: string, settings: Partial<AppSettings>) {
+  const record = settings as Record<string, unknown>;
+  const columns = APP_SETTINGS_COLUMNS.filter((column) => record[column] !== undefined);
+  const values: unknown[] = columns.map((column) => record[column]);
+  values.push(userId);
+  const assignments = [...columns.map((column, index) => `${column} = $${index + 1}`), `updated_by = $${values.length}`];
+  await query(`update app_settings set ${assignments.join(", ")} where id = 1`, values);
+}
