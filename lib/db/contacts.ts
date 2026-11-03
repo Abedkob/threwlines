@@ -260,42 +260,78 @@ export async function listPipelineContacts(
   );
   const owner = options.owner ?? "all";
   const dateRange = activityDateRange(options.activity ?? "all");
-  const results = await Promise.all(
-    stages.map(async (stage) => {
-      const page = Math.max(1, Math.floor(options.pages?.[stage] ?? 1) || 1);
-      const where = new Where();
-      where.add((p) => `c.stage = ${p}`, stage);
-      where.search(options.query ?? "");
-      if (owner === "unassigned") where.conditions.push("c.assigned_to is null");
-      else if (owner !== "all") where.add((p) => `c.assigned_to = ${p}`, owner);
-      if (dateRange.afterExclusive)
-        where.add((p) => `c.last_touched_at > ${p}`, dateRange.afterExclusive);
-      if (dateRange.beforeInclusive)
-        where.add((p) => `c.last_touched_at <= ${p}`, dateRange.beforeInclusive);
-      const [total, rows] = await Promise.all([
-        countContacts(where),
-        selectContacts(where, pageSize, (page - 1) * pageSize),
-      ]);
-      return {
-        stage,
-        rows,
-        total,
-        page,
-        totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      };
-    }),
-  );
-  const pick = <T>(select: (result: (typeof results)[number]) => T) =>
-    Object.fromEntries(results.map((result) => [result.stage, select(result)])) as Record<
-      ContactStage,
-      T
-    >;
-  return {
-    rows: pick((result) => result.rows),
-    totals: pick((result) => result.total),
-    pages: pick((result) => result.page),
-    totalPages: pick((result) => result.totalPages),
-  };
+
+  // Build the shared WHERE (every filter except stage). The window query below
+  // partitions by stage, so each stage gets its own row_number and total count
+  // in one round-trip instead of 12 separate queries (6 counts + 6 selects).
+  const where = new Where();
+  where.search(options.query ?? "");
+  if (owner === "unassigned") where.conditions.push("c.assigned_to is null");
+  else if (owner !== "all") where.add((p) => `c.assigned_to = ${p}`, owner);
+  if (dateRange.afterExclusive)
+    where.add((p) => `c.last_touched_at > ${p}`, dateRange.afterExclusive);
+  if (dateRange.beforeInclusive)
+    where.add((p) => `c.last_touched_at <= ${p}`, dateRange.beforeInclusive);
+
+  // Window bounds per stage. SQL does the slicing with (rn > from and rn <= to)
+  // so we need the inclusive bounds for the IN-list.
+  const pages: Record<ContactStage, number> = Object.fromEntries(
+    stages.map((stage) => [stage, Math.max(1, Math.floor(options.pages?.[stage] ?? 1) || 1)]),
+  ) as Record<ContactStage, number>;
+  const bounds = stages.map((stage) => ({
+    stage,
+    from: (pages[stage] - 1) * pageSize,
+    to: pages[stage] * pageSize,
+  }));
+
+  // Each (stage, from, to) tuple becomes one bounds row in a VALUES CTE,
+  // which the main select joins to its stage partition.
+  const boundsStart = where.params.length + 1;
+  const boundsValues = bounds.map((_, i) => {
+    const s = boundsStart + i * 3;
+    return `($${s}::contact_stage, $${s + 1}::int, $${s + 2}::int)`;
+  }).join(", ");
+  const boundsParams = bounds.flatMap((b) => [b.stage, b.from, b.to]);
+  const params = [...where.params, ...boundsParams];
+
+  type Row = Contact & { stage_total: number };
+  const sql = `
+    with ranked as (
+      ${contactSummarySelect}
+      ${where.sql()}
+    ),
+    windowed as (
+      select r.*,
+        row_number() over (partition by r.stage order by r.last_touched_at asc, r.id asc) as rn,
+        count(*) over (partition by r.stage) as stage_total
+      from ranked r
+    ),
+    stage_bounds (stage, from_rn, to_rn) as (values ${boundsValues})
+    select w.*
+    from windowed w
+    join stage_bounds b on b.stage = w.stage
+    where w.rn > b.from_rn and w.rn <= b.to_rn
+    order by w.stage, w.rn
+  `;
+  const { rows } = await query<Row>(sql, params);
+
+  // Group rows by stage, carrying stage_total out.
+  const grouped = Object.fromEntries(stages.map((s) => [s, [] as Row[]])) as Record<ContactStage, Row[]>;
+  for (const row of rows) grouped[row.stage].push(row);
+
+  const totals: Record<ContactStage, number> = Object.fromEntries(stages.map((s) => [s, 0])) as Record<ContactStage, number>;
+  for (const stage of stages) {
+    const first = grouped[stage][0];
+    totals[stage] = first ? Number(first.stage_total) : 0;
+  }
+  const totalPages: Record<ContactStage, number> = Object.fromEntries(
+    stages.map((s) => [s, Math.max(1, Math.ceil(totals[s] / pageSize))]),
+  ) as Record<ContactStage, number>;
+  const rowsByStage: Record<ContactStage, Contact[]> = Object.fromEntries(
+    stages.map((s) => [s, grouped[s].map(({ stage_total: _ignored, ...rest }) => normalizeContact(rest as Contact))]),
+  ) as Record<ContactStage, Contact[]>;
+
+  return { rows: rowsByStage, totals, pages, totalPages };
 }
 
 export async function listAttentionContacts(limit = 5): Promise<Contact[]> {

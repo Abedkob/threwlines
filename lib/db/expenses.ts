@@ -26,8 +26,10 @@ export async function listExpensesPage(options: {
   pageSize: number;
 }): Promise<PagedResult<Expense>> {
   const bounds = pageBounds(options.page, options.pageSize);
-  const total = await queryCount("select count(*) from expenses");
-  const { rows } = await query<Expense>(
+  // Count and select in parallel — the two queries don't depend on each other.
+  const [total, { rows }] = await Promise.all([
+    queryCount("select count(*) from expenses"),
+    query<Expense>(
     `select e.*,
        case when ec.id is null then null
             else json_build_object('id', ec.id, 'name', ec.name) end as category,
@@ -39,7 +41,8 @@ export async function listExpensesPage(options: {
      order by e.spent_on desc, e.id desc
      limit $1 offset $2`,
     [bounds.pageSize, bounds.from],
-  );
+    ),
+  ]);
   return paged(
     rows.map((expense) => ({ ...expense, amount: Number(expense.amount) })),
     total,

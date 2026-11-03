@@ -50,16 +50,16 @@ export async function listTasksPage(options: {
     params.push(options.status);
     where = `where t.status = $${params.length}`;
   }
-  const total = await queryCount(
-    `select count(*) from tasks t ${where}`,
-    params,
-  );
-  const { rows } = await query<Task>(
-    `${taskSelect} ${where}
-     order by t.due_date asc nulls last, t.id asc
-     limit $${params.length + 1} offset $${params.length + 2}`,
-    [...params, bounds.pageSize, bounds.from],
-  );
+  // Count and select in parallel — the two queries don't depend on each other.
+  const [total, { rows }] = await Promise.all([
+    queryCount(`select count(*) from tasks t ${where}`, params),
+    query<Task>(
+      `${taskSelect} ${where}
+       order by t.due_date asc nulls last, t.id asc
+       limit $${params.length + 1} offset $${params.length + 2}`,
+      [...params, bounds.pageSize, bounds.from],
+    ),
+  ]);
   return paged(rows.map(normalizeTask), total, bounds.page, bounds.pageSize);
 }
 
