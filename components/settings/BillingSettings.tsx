@@ -3,14 +3,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Building2, FileText, LoaderCircle, Upload, WalletCards } from "lucide-react";
 import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { AppSettings } from "@/types/db";
 
 export function BillingSettings() {
+  // These are payment-recipient details, so the API reserves them for
+  // superadmins. Rendering the panel to a member would only show a 403.
+  const isSuperadmin = useAuth().user.role === "superadmin";
   const [value, setValue] = useState<AppSettings | null>(null);
   const [previews, setPreviews] = useState<{ logo: string | null; stamp: string | null }>({ logo: null, stamp: null });
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState("");
   useEffect(() => {
+    if (!isSuperadmin) { setBusy(false); return; }
     void (async () => {
       try {
         const settings = await apiFetch<AppSettings | null>("/api/billing/settings");
@@ -20,7 +25,7 @@ export function BillingSettings() {
       } catch (error) { setMessage(error instanceof Error ? error.message : "Billing settings could not load."); }
       finally { setBusy(false); }
     })();
-  }, []);
+  }, [isSuperadmin]);
   function set<K extends keyof AppSettings>(key: K, next: AppSettings[K]) {
     setValue((current) => current ? { ...current, [key]: next } : current);
   }
@@ -52,6 +57,7 @@ export function BillingSettings() {
     catch (error) { setMessage(error instanceof Error ? error.message : "Settings could not be saved."); }
     finally { setBusy(false); }
   }
+  if (!isSuperadmin) return null;
   if (!value) return <section className="settings-card billing-settings"><div className="feed-loading">{busy && <LoaderCircle className="spin-icon" size={16} />} {message || "Loading billing settings…"}</div></section>;
   const text = (key: keyof AppSettings, label: string, type = "text") => <label className="field"><span>{label}</span><input type={type} value={String(value[key] ?? "")} onChange={(e) => set(key, e.target.value as never)} /></label>;
   const area = (key: keyof AppSettings, label: string) => <label className="field span-2"><span>{label}</span><textarea rows={3} value={String(value[key] ?? "")} onChange={(e) => set(key, e.target.value as never)} /></label>;

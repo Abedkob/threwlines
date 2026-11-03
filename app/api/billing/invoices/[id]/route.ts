@@ -1,6 +1,25 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { requireSession, jsonResponse, handleError, readBody } from "@/lib/api/helpers";
+import { requireSession, jsonResponse, handleError, readBody, pick } from "@/lib/api/helpers";
+
+// The protected SQL function enforces superadmin; this allowlist stops any
+// other column riding along in the request body.
+const INVOICE_FIELDS = [
+  "contact_id",
+  "contract_id",
+  "template_id",
+  "invoice_date",
+  "due_date",
+  "service_period_start",
+  "service_period_end",
+  "currency",
+  "contract_reference",
+  "purchase_order_reference",
+  "discount",
+  "notes",
+  "terms",
+  "payment_instructions",
+] as const;
 import { deleteInvoice, getInvoice, updateInvoice } from "@/lib/db/billing";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -18,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const session = await requireSession(await cookies());
     const { id } = await params;
     const body = await readBody(request);
-    await updateInvoice(session.userId, id, body.invoice ?? {}, body.items ?? []);
+    await updateInvoice(session.userId, id, pick(body.invoice ?? {}, INVOICE_FIELDS), body.items ?? []);
     return jsonResponse({ ok: true });
   } catch (error) {
     return handleError(error);
