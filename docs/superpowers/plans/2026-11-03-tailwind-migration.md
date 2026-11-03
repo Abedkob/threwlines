@@ -217,7 +217,9 @@ Expected: FAIL on `login.css` and `licensing.css`.
 
 - [ ] **Step 3: Add a shared focus ring**
 
-Define `--focus-ring: 0 0 0 3px color-mix(in srgb, var(--primary) 32%, transparent)` in `:root`, apply it as `box-shadow` on `:focus-visible` in each sheet, and add a light-on-dark variant for controls inside `.sidebar`, where the indigo ring fails against `--ink`.
+Define the ring as two solid layers in `:root` — `--focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary)` and `--focus-ring-dark: 0 0 0 2px var(--ink), 0 0 0 4px var(--surface)` — apply as `box-shadow` on `:focus-visible` in each sheet, and use the dark variant for controls inside `.sidebar`.
+
+The inner 2px separator is load-bearing, not decoration: without it the outer indigo ring disappears against a `--primary` button and against tinted rows. A translucent single-layer ring was tried first and rejected — `color-mix(in srgb, var(--primary) 32%, transparent)` composites to `#BEC5F5`, which is 1.68:1 against white and so fails the 3:1 WCAG asks of a focus indicator. The solid primary is 6.61:1 on white and 6.16:1 on canvas; white on the sidebar is 17.92:1.
 
 - [ ] **Step 4: Verify by keyboard**
 
