@@ -248,7 +248,7 @@ export function ExpensesClient() {
               <p className="eyebrow">Category mix</p>
               <h2>Where it went</h2>
             </div>
-            <strong className="large-total">{money(total)}</strong>
+            <strong className="large-total tabular-nums">{money(total)}</strong>
           </header>
           <div className="expense-category-list">
             {categoryTotals.map((category, index) => (
@@ -372,8 +372,8 @@ export function ExpensesClient() {
                             {fmtDay(expense.spent_on)}
                           </span>
                         </td>
-                        <td>
-                          <strong>{money(expense.amount)}</strong>
+                        <td className="text-right">
+                          <strong className="tabular-nums">{money(expense.amount)}</strong>
                         </td>
                         {role === "superadmin" && (
                           <td>

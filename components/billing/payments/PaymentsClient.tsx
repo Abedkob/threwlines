@@ -221,7 +221,7 @@ export function PaymentsClient() {
                 <td><Link href={`/invoices/${record.invoice.id}`} className="payment-invoice-link"><strong>{record.invoice.invoice_number}</strong><small>{record.invoice.status.replace("_", " ")}</small></Link></td>
                 <td><span className={`payment-method-chip method-${record.payment_method}`}><i />{record.payment_method.toUpperCase()}</span></td>
                 <td><span className="payment-date"><CalendarDays size={12} />{fmtDay(record.paid_on)}</span></td>
-                <td><strong className="payment-record-amount">{money(record.amount, record.invoice.currency)}</strong></td>
+                <td className="text-right"><strong className="payment-record-amount tabular-nums">{money(record.amount, record.invoice.currency)}</strong></td>
                 <td><Link href={`/invoices/${record.invoice.id}`} className="invoice-open-link" aria-label={`Open ${record.invoice.invoice_number}`}><ArrowUpRight size={13} /></Link></td>
               </tr>
             ))}</tbody>
