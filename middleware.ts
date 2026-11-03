@@ -2,16 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_NAME } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/token";
 
+const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout", "/api/auth/me"]);
+
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/auth/")) {
-    return NextResponse.next();
-  }
-
-  const isLogin = request.nextUrl.pathname === "/login";
-
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete("x-idv-auth-user");
   requestHeaders.delete("x-idv-auth-email");
+
+  if (PUBLIC_AUTH.has(request.nextUrl.pathname)) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  const isLogin = request.nextUrl.pathname === "/login";
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const session = token ? await verifySessionToken(token) : null;
