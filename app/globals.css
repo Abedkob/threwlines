@@ -62,6 +62,10 @@
   --radius-lg: 18px;
   --shadow: 0 16px 45px rgba(25, 31, 48, 0.08);
   --sidebar-width: 248px;
+
+  /* Keyboard focus rings. The dark variant is for controls on --ink surfaces. */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--primary) 32%, transparent);
+  --focus-ring-on-dark: 0 0 0 3px color-mix(in srgb, var(--surface) 80%, transparent);
 }
 
 * {
@@ -97,8 +101,23 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid rgba(61, 90, 241, 0.32);
+  /* Transparent outline keeps a visible indicator in forced-colors mode. */
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+.segmented button.selected:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+/* Bare inputs inside a wrapper that draws its own :focus-within state. */
+.search-box input:focus-visible,
+.payment-search input:focus-visible,
+.payment-filter select:focus-visible,
+.pipeline-filter select:focus-visible {
+  box-shadow: none;
+}
+.sidebar :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  box-shadow: var(--focus-ring-on-dark);
 }
 
 .app-shell {
@@ -777,6 +796,8 @@ textarea:focus-visible,
   position: relative;
   z-index: 1;
   background: var(--brand-soft);
+  box-shadow: none;
+  outline: 3px solid color-mix(in srgb, var(--primary) 32%, transparent);
   outline-offset: -3px;
 }
 .contacts-table tbody tr:last-child td {
@@ -3649,11 +3670,6 @@ textarea:focus-visible,
 .pipeline-clear:hover {
   color: var(--brand);
   border-color: #b9c2f8;
-}
-.pipeline-clear:focus-visible,
-.pipeline-pagination button:focus-visible {
-  outline: 3px solid rgba(61, 90, 241, 0.18);
-  outline-offset: 2px;
 }
 .pipeline-column {
   display: flex;

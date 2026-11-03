@@ -15,3 +15,24 @@
 @media(max-width:1050px){.api-connection-body{grid-template-columns:1fr}.api-endpoint-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.api-connection-header{grid-template-columns:38px minmax(0,1fr)}.api-connection-symbol{width:38px;height:38px}.api-panel-close{grid-column:1/-1;justify-self:start}.api-connection-body{padding:10px}.api-endpoint-grid{grid-template-columns:1fr;padding:0 10px 10px}.api-snippet-card{margin:0 10px 10px}.api-address-actions{display:grid;grid-template-columns:1fr}.api-address-actions .button{justify-content:center}.api-policy-line{grid-template-columns:1fr}.api-policy-line>span+span{border-top:1px solid var(--line-soft);border-left:0}}
 @media(max-width:480px){.api-copy-field{grid-template-columns:1fr}.api-copy-field button{height:34px}.api-product-code{grid-template-columns:1fr}.api-product-code button{height:34px}.api-snippet-card header{grid-template-columns:30px 1fr}.api-snippet-card header button{grid-column:1/-1}.api-connection-header h2{font-size:15px}}
+
+/* Keyboard focus. The base ring comes from globals.css; these cover surfaces it cannot. */
+.license-search:has(input:focus-visible) {
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+.license-search input:focus-visible {
+  box-shadow: none;
+}
+.license-product-rail button:focus-visible {
+  border-color: var(--primary);
+  box-shadow: inset var(--focus-ring);
+}
+.license-command-strip :is(a, button):focus-visible,
+.api-snippet-card header button:focus-visible {
+  box-shadow: var(--focus-ring-on-dark);
+}
+.api-copy-field button:focus-visible,
+.api-product-code button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
