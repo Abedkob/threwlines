@@ -10,6 +10,7 @@ import type {
 import { query, queryOne, rpc } from "./query.ts";
 import { deleteRow, pageBounds, paged } from "./shared.ts";
 import { invalidateBrowserQueries } from "../query-cache.ts";
+import { getFileUrl, uploadFile } from "../storage/local.ts";
 
 function notifyBillingChanged() {
   if (typeof window === "undefined") return;
@@ -44,13 +45,12 @@ export function withEffectiveInvoiceStatus<T extends Invoice>(invoice: T): T {
   return invoice;
 }
 
-// Storage moves in a separate task; these stay as stubs until then.
-export async function uploadCompanyAsset(_kind: "logo" | "stamp", _file: File): Promise<string> {
-  throw new Error("Not yet migrated");
+export async function uploadCompanyAsset(kind: "logo" | "stamp", file: File): Promise<string> {
+  return uploadFile(kind, file);
 }
 
-export async function signedAssetUrl(_path?: string | null): Promise<string | null> {
-  throw new Error("Not yet migrated");
+export async function signedAssetUrl(path?: string | null): Promise<string | null> {
+  return getFileUrl(path);
 }
 
 export async function listTemplates() {
