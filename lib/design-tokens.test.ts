@@ -3,6 +3,40 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { AA_TEXT_PAIRS, TOKENS, contrastRatio, countLegacyHex, LEGACY_HEX_BUDGET } from "./design-tokens.ts";
 
+// Rules live in the demoted `legacy` cascade layer; only tokens stay in the entry point.
+const legacySheet = (name: string): string => readFileSync(`app/legacy/${name}.css`, "utf8");
+
+test("layout imports exactly one stylesheet", () => {
+  const imports = readFileSync("app/layout.tsx", "utf8").match(/^import ".*\.css";$/gm) ?? [];
+  assert.deepEqual(imports, ['import "./globals.css";']);
+});
+
+test("globals.css declares layer order with legacy lowest and omits Preflight", () => {
+  const css = readFileSync("app/globals.css", "utf8");
+  assert.match(css, /@layer legacy,\s*theme,\s*base,\s*components,\s*utilities;/);
+  assert.match(css, /@import "tailwindcss\/utilities\.css" layer\(utilities\);/);
+  assert.doesNotMatch(css, /preflight/);
+});
+
+test("every legacy sheet is imported into the legacy layer", () => {
+  const css = readFileSync("app/globals.css", "utf8");
+  for (const name of ["globals", "shell", "document-templates", "licensing", "login"]) {
+    assert.match(css, new RegExp(`@import "\\./legacy/${name}\\.css" layer\\(legacy\\);`), `${name}.css is not layered`);
+  }
+});
+
+test("print blocks survive the move", () => {
+  const css = legacySheet("globals");
+  assert.equal((css.match(/@media print/g) ?? []).length, 3);
+  assert.match(css, /print-color-adjust:\s*exact/);
+  assert.equal((css.match(/@page\b/g) ?? []).length, 4);
+  assert.match(css, /@page\s*\{/);
+  assert.match(css, /@page invoice-landscape\s*\{/);
+  const templates = legacySheet("document-templates");
+  assert.equal((templates.match(/@media print/g) ?? []).length, 1);
+  assert.match(templates, /print-color-adjust:\s*exact/);
+});
+
 test("contrastRatio matches known values", () => {
   assert.equal(Math.round(contrastRatio("#FFFFFF", "#000000")), 21);
   assert.ok(Math.abs(contrastRatio(TOKENS.primary, "#FFFFFF") - 6.61) < 0.02);
@@ -17,7 +51,7 @@ test("every token is declared in globals.css", () => {
 
 test("legacy hardcoded hex count does not grow", () => {
   const files = ["globals", "login", "document-templates", "licensing", "shell"];
-  const total = files.reduce((n, f) => n + countLegacyHex(readFileSync(`app/${f}.css`, "utf8")), 0);
+  const total = files.reduce((n, f) => n + countLegacyHex(legacySheet(f)), 0);
   assert.ok(total <= LEGACY_HEX_BUDGET, `${total} hex literals exceeds budget ${LEGACY_HEX_BUDGET}`);
 });
 
@@ -33,7 +67,7 @@ test("status and license pills meet WCAG AA text contrast", () => {
   const rule = /(?<=^|[}\s,])(\.(?:status|license-state)-[a-z_]+)\s*\{([^{}]*)\}/g;
   const pairs = new Map<string, [string, string]>();
   for (const file of ["globals", "licensing"]) {
-    const css = readFileSync(`app/${file}.css`, "utf8");
+    const css = legacySheet(file);
     for (const match of css.matchAll(rule)) {
       const color = /(?:^|[;\s])color\s*:\s*(#[0-9a-f]{3,6})\b/i.exec(match[2]);
       const background = /(?:^|[;\s])background\s*:\s*(#[0-9a-f]{3,6})\b/i.exec(match[2]);
@@ -57,7 +91,7 @@ const FOCUS_SHEETS = ["globals", "login", "licensing"];
 
 test("every stylesheet that styles controls defines a focus ring", () => {
   for (const f of FOCUS_SHEETS) {
-    const css = readFileSync(`app/${f}.css`, "utf8");
+    const css = legacySheet(f);
     if (/\b(button|input|select|textarea|\[tabindex)/.test(css)) {
       assert.match(css, /:focus-visible/, `${f}.css styles controls but has no focus-visible rule`);
       assert.match(
@@ -80,7 +114,7 @@ test("the focus ring is two solid layers drawn from tokens", () => {
   assert.deepEqual(rings.get("--focus-ring"), ["surface", "primary"]);
   assert.deepEqual(rings.get("--focus-ring-dark"), ["ink", "surface"]);
   for (const f of FOCUS_SHEETS) {
-    const sheet = readFileSync(`app/${f}.css`, "utf8");
+    const sheet = legacySheet(f);
     const stale = /:focus-visible[^{}]*\{[^{}]*rgba\(61,\s*90,\s*241/.exec(sheet);
     assert.equal(stale, null, `${f}.css still has a focus rule using the old brand blue`);
   }
@@ -98,7 +132,7 @@ test("the focus ring is at least 3:1 against the surface it sits on", () => {
 });
 
 test("controls inside the sidebar use the dark ring", () => {
-  const css = readFileSync("app/globals.css", "utf8");
+  const css = legacySheet("globals");
   assert.match(
     css,
     /\.sidebar[^{}]*:focus-visible[^{}]*\{[^{}]*box-shadow:\s*var\(--focus-ring-dark\)/,
@@ -111,7 +145,7 @@ test("a focus-visible rule never draws a second, competing indicator", () => {
   // switches the ring off (table rows, where box-shadow is unreliable).
   const rule = /([^{}]*:focus-visible[^{}]*)\{([^{}]*)\}/g;
   for (const f of [...FOCUS_SHEETS, "document-templates"]) {
-    const css = readFileSync(`app/${f}.css`, "utf8").replace(/@media\s+print\s*\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
+    const css = legacySheet(f).replace(/@media\s+print\s*\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
     for (const [, selector, body] of css.matchAll(rule)) {
       const outline = /outline\s*:\s*([^;}]+)/.exec(body);
       if (outline && !/transparent|none|^0$/.test(outline[1].trim())) {

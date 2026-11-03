@@ -46,7 +46,7 @@ export const AA_TEXT_PAIRS: ReadonlyArray<[string, string]> = [
 
 // Hard ceiling on hex literals in the legacy sheets, excluding :root and @theme.
 // Later migration tasks lower this as screens move to tokens.
-export const LEGACY_HEX_BUDGET = 1172;
+export const LEGACY_HEX_BUDGET = 1170;
 
 function channelToLinear(value: number): number {
   const c = value / 255;
