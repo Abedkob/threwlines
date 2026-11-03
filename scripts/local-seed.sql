@@ -9,7 +9,7 @@ insert into profiles (id, email, password_hash, name, app_role)
 values (
   gen_random_uuid(),
   'admin@idevelopit.local',
-  '$2b$10$d061Io86MQ6QnKiTqF/h/upeLiIrva2/kiuGvicvy2.a18ZRY6mXe',
+  '$2b$12$d2BaFOqWrrTlItuMYRCN2ObGT8T9IqFSKkaQKI7R/IBJR1X0UIqu2',
   'Admin',
   'superadmin'
 )

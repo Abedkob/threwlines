@@ -34,6 +34,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session && !isLogin) {
+    // API routes get a JSON 401 instead of an HTML redirect, so apiFetch
+    // (which follows redirects) does not silently swallow a 307 as a
+    // successful empty response.
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

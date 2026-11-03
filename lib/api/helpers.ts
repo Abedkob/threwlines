@@ -19,10 +19,51 @@ export function errorResponse(message: string, status = 500) {
   return NextResponse.json({ error: message }, { status });
 }
 
+// Postgres SQLSTATE classes we treat as user input errors (400). The raw
+// Postgres message would leak schema/column names, so we return a generic
+// label per class instead of the pg text.
+const PG_INPUT_CODES: Record<string, string> = {
+  "23502": "A required field is missing.",       // not_null_violation
+  "23505": "A value must be unique.",             // unique_violation
+  "23503": "A referenced record does not exist.", // foreign_key_violation
+  "23514": "A value is not allowed.",             // check_violation
+  "22001": "A value is too long.",                // string_data_right_truncation
+  "22P02": "A value is not in the right format.", // invalid_text_representation
+  "22023": "A value is out of range.",            // invalid_parameter_value
+};
+
 export function handleError(error: unknown) {
+  // A handler that already threw a Response (e.g. requireSession throwing a
+  // 401) is passed through verbatim.
   if (error instanceof Response) return error;
-  const message = error instanceof Error ? error.message : "Internal error";
-  return errorResponse(message, 500);
+
+  // Postgres errors carry a SQLSTATE code — recognise the input-shape ones
+  // and respond with a safe, generic 400 instead of echoing the raw message.
+  if (error && typeof error === "object" && "code" in error) {
+    const code = String((error as { code?: unknown }).code ?? "");
+    if (code in PG_INPUT_CODES) {
+      return errorResponse(PG_INPUT_CODES[code], 400);
+    }
+    if (code && /^[0-9A-Z]{5}$/.test(code)) {
+      // Any other SQLSTATE is a server-side problem; do not leak the text.
+      console.error("[api] db error:", error);
+      return errorResponse("Internal error.", 500);
+    }
+  }
+
+  const message = error instanceof Error ? error.message : "";
+  // Map intentional, user-safe errors from the data layer to real HTTP codes.
+  // Everything else is treated as internal: logged server-side and reported
+  // as a generic 500 so we don't leak DB constraint names or stack signatures.
+  const text = message.toLowerCase();
+  if (/not found|does not exist/.test(text)) return errorResponse(message, 404);
+  if (/unauthoriz|not authenticated|session expired/.test(text)) return errorResponse(message, 401);
+  if (/forbidden|only superadmin|not allowed|permission denied/.test(text)) return errorResponse(message, 403);
+  if (/invalid|required|missing|must be|too long|too short|out of range|duplicate name|must not/.test(text)) {
+    return errorResponse(message, 400);
+  }
+  console.error("[api] unhandled error:", error);
+  return errorResponse("Internal error.", 500);
 }
 
 export async function readBody(request: Request): Promise<Record<string, any>> {
