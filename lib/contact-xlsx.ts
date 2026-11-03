@@ -126,7 +126,7 @@ function styleHeader(sheet: Worksheet) {
 export async function buildContactTemplate(profiles: Profile[]) {
   const ExcelJS = await loadExcelJs();
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "idevelopit-vault";
+  workbook.creator = "ThrewLines";
   workbook.created = new Date();
   workbook.modified = new Date();
   workbook.properties.date1904 = false;

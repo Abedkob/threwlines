@@ -73,12 +73,12 @@ export function Sidebar({
           <div className="nav-group" key={group.label}>
             <p className="nav-label"><span>{group.label}</span><i /></p>
             <div className="nav-group-links">
-              {group.links.map(({ href, label, description, icon: Icon, badge }) => {
+              {group.links.map(({ href, label, description, icon: Icon, badge, children }) => {
                 const active = navigationItemIsActive(pathname, href);
                 const count = badge ? badges[badge] : 0;
                 return (
+                  <div key={href}>
                   <Link
-                    key={href}
                     href={href}
                     onClick={onClose}
                     className={`nav-link ${active ? "active" : ""}`}
@@ -89,6 +89,28 @@ export function Sidebar({
                     <span className="nav-copy"><strong>{label}</strong><small>{description}</small></span>
                     {count > 0 && <span className="nav-badge" aria-label={`${count} ${badge === "contacts" ? "stale contacts" : "open tasks"}`}>{count > 99 ? "99+" : count}</span>}
                   </Link>
+                  {/* Sub-pages drop down while the section is open, so each
+                      settings module is reachable without a landing page. */}
+                  {children && active && (
+                    <div className="mt-1 mb-1 ml-[22px] flex flex-col gap-px border-l border-white/10 pl-3">
+                      {children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onClose}
+                          className={`rounded-control px-2 py-1.5 text-xs transition-colors ${
+                            pathname === child.href
+                              ? "bg-white/10 text-white"
+                              : "text-white/55 hover:bg-white/5 hover:text-white"
+                          }`}
+                          aria-current={pathname === child.href ? "page" : undefined}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  </div>
                 );
               })}
             </div>

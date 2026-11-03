@@ -1,6 +1,6 @@
-import { SettingsClient } from "@/components/settings/SettingsClient";
-import { BillingSettings } from "@/components/settings/BillingSettings";
-export const metadata = { title: "Settings" };
+import { redirect } from "next/navigation";
+
+// Settings is a set of modules now; land on the first one.
 export default function SettingsPage() {
-  return <><BillingSettings /><SettingsClient /></>;
+  redirect("/settings/company");
 }

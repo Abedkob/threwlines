@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Check, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
 import { apiFetch, jsonBody } from "@/lib/api/client";
-import { money } from "@/lib/format";
+import { money, plural } from "@/lib/format";
 import type { ExpenseCategory, Service } from "@/types/db";
 
 function ServiceRow({
@@ -265,7 +265,10 @@ function CategoryRow({
   );
 }
 
-export function SettingsClient() {
+export type WorkspaceModule = "services" | "categories";
+
+export function SettingsClient({ only }: { only?: WorkspaceModule }) {
+  const show = (module: WorkspaceModule) => !only || only === module;
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [serviceName, setServiceName] = useState("");
@@ -395,13 +398,13 @@ export function SettingsClient() {
         </div>
       </div>
       <div className="settings-grid">
-        <section className="surface settings-panel">
+        {show("services") && (<section className="surface settings-panel">
           <header className="panel-heading">
             <div>
               <p className="eyebrow">Revenue catalog</p>
               <h2>Services</h2>
             </div>
-            <span>{services.length} entries</span>
+            <span>{plural(services.length, "entry", "entries")}</span>
           </header>
           <form className="settings-add-form" onSubmit={addService}>
             <input
@@ -442,14 +445,14 @@ export function SettingsClient() {
               />
             ))}
           </div>
-        </section>
-        <section className="surface settings-panel">
+        </section>)}
+        {show("categories") && (<section className="surface settings-panel">
           <header className="panel-heading">
             <div>
               <p className="eyebrow">Expense taxonomy</p>
               <h2>Categories</h2>
             </div>
-            <span>{categories.length} entries</span>
+            <span>{plural(categories.length, "entry", "entries")}</span>
           </header>
           <form
             className="settings-add-form category-add"
@@ -486,7 +489,7 @@ export function SettingsClient() {
             expenses cannot be deleted; renaming updates every linked expense
             automatically.
           </p>
-        </section>
+        </section>)}
       </div>
     </div>
   );

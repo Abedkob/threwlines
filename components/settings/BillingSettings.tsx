@@ -6,7 +6,13 @@ import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { AppSettings } from "@/types/db";
 
-export function BillingSettings() {
+export type BillingModule = "company" | "invoicing" | "payments";
+
+// Each settings module is its own page, so the component renders one
+// section at a time. It still loads and saves the whole settings record:
+// saveAppSettings only writes the columns it is given.
+export function BillingSettings({ only }: { only?: BillingModule }) {
+  const show = (module: BillingModule) => !only || only === module;
   // These are payment-recipient details, so the API reserves them for
   // superadmins. Rendering the panel to a member would only show a 403.
   const isSuperadmin = useAuth().user.role === "superadmin";
@@ -64,18 +70,18 @@ export function BillingSettings() {
   return <form className="billing-settings" onSubmit={save}>
     <header className="settings-intro billing-settings-intro"><span><Building2 size={19}/></span><div><p className="eyebrow">Billing foundation</p><h2>Company & invoice settings</h2><p>These defaults flow into contracts and invoices. Finalized invoices keep snapshots.</p></div><button className="button button-primary" disabled={busy}>Save billing settings</button></header>
     <div className="billing-settings-grid">
-      <section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><Building2 size={14}/> Company profile</p><h3>Shown on invoices</h3></div></div><div className="form-grid">
+      {show("company") && (<section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><Building2 size={14}/> Company profile</p><h3>Shown on invoices</h3></div></div><div className="form-grid">
         {text("company_name","Company name")}{text("company_tagline","Tagline")}{text("company_phone","Phone","tel")}{text("company_email","Email","email")}{text("company_website","Website","url")}
         <div className="field span-2 asset-fields">{(["logo","stamp"] as const).map((kind) => <label className="asset-upload" key={kind}>{previews[kind] ? <img src={previews[kind]!} alt={`${kind} preview`} /> : <Upload size={22}/>}<span>{kind === "logo" ? "Upload logo" : "Upload stamp"}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => void upload(kind,e.target.files?.[0])}/></label>)}</div>
-      </div></section>
-      <section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><FileText size={14}/> Invoice defaults</p><h3>Numbering and content</h3></div></div><div className="form-grid">
+      </div></section>)}
+      {show("invoicing") && (<section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><FileText size={14}/> Invoice defaults</p><h3>Numbering and content</h3></div></div><div className="form-grid">
         {text("invoice_prefix","Prefix")}{text("next_invoice_number","Next number","number")}{text("invoice_number_padding","Number padding","number")}{text("default_currency","Currency")}{text("default_due_days","Due days","number")}{area("default_terms","Terms")}{area("default_footer","Footer")}{area("default_payment_instructions","Payment instructions")}
-      </div></section>
-      <section className="settings-card span-2"><div className="section-heading"><div><p className="eyebrow"><WalletCards size={14}/> Payment methods</p><h3>Cash, OMT and Whish only</h3></div></div><div className="form-grid">
+      </div></section>)}
+      {show("payments") && (<section className="settings-card span-2"><div className="section-heading"><div><p className="eyebrow"><WalletCards size={14}/> Payment methods</p><h3>Cash, OMT and Whish only</h3></div></div><div className="form-grid">
         <label className="check-row"><input type="checkbox" checked={value.cash_enabled} onChange={(e)=>set("cash_enabled",e.target.checked)}/> Enable cash</label>
         <label className="check-row"><input type="checkbox" checked={value.omt_enabled} onChange={(e)=>set("omt_enabled",e.target.checked)}/> Enable OMT</label>{text("omt_recipient_name","OMT recipient")}{text("omt_phone","OMT phone","tel")}
         <label className="check-row"><input type="checkbox" checked={value.whish_enabled} onChange={(e)=>set("whish_enabled",e.target.checked)}/> Enable Whish</label>{text("whish_recipient_name","Whish recipient")}{text("whish_phone","Whish phone","tel")}
-      </div></section>
+      </div></section>)}
     </div>{message && <div className="drawer-error" role="status">{message}</div>}
   </form>;
 }

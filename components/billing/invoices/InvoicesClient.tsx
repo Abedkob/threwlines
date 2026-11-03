@@ -24,7 +24,7 @@ import {
 import { calculateTotals, validateInvoice } from "@/lib/billing-validation";
 import { syncCustomerBilling } from "@/lib/customer-billing";
 import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
-import { fmtDay, money } from "@/lib/format";
+import { fmtDay, money, plural } from "@/lib/format";
 import type { BillingLineInput, Contact, DocumentTemplate, Invoice, PagedResult, Service } from "@/types/db";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -179,9 +179,9 @@ export function InvoicesClient() {
   return (
     <div className="billing-view">
       <section className="stat-grid billing-stat-grid" aria-label="Invoice totals">
-        <article className="stat-card"><span className="stat-icon"><ReceiptText size={17} /></span><div><p>Total billed</p><strong>{money(metrics.billed)}</strong><small>{rows.length} invoices in this view</small></div></article>
+        <article className="stat-card"><span className="stat-icon"><ReceiptText size={17} /></span><div><p>Total billed</p><strong>{money(metrics.billed)}</strong><small>{plural(rows.length, "invoice")} in this view</small></div></article>
         <article className="stat-card attention-stat"><span className="stat-icon"><WalletCards size={17} /></span><div><p>Outstanding</p><strong>{money(metrics.outstanding)}</strong><small>still to collect</small></div></article>
-        <article className="stat-card"><span className="stat-icon"><CheckCircle2 size={17} /></span><div><p>Paid</p><strong>{metrics.paid}</strong><small>settled invoices</small></div></article>
+        <article className="stat-card"><span className="stat-icon"><CheckCircle2 size={17} /></span><div><p>Paid</p><strong>{metrics.paid}</strong><small>{metrics.paid === 1 ? "settled invoice" : "settled invoices"}</small></div></article>
       </section>
 
       {message && <div className="page-error" role="status">{message}<button onClick={() => setMessage("")}>Dismiss</button></div>}

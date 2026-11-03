@@ -15,7 +15,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
 import { Pagination } from "@/components/ui/Pagination";
 import { EditExpenseModal } from "@/components/expenses/EditExpenseModal";
-import { fmtDay, initials, money } from "@/lib/format";
+import { fmtDay, initials, money, plural } from "@/lib/format";
 import type {
   Expense,
   ExpenseCategory,
@@ -318,7 +318,7 @@ export function ExpensesClient() {
                   <ShieldCheck size={12} /> Superadmin
                 </span>
               )}
-              <span>{result.total} entries</span>
+              <span>{plural(result.total, "entry", "entries")}</span>
             </div>
           </header>
           {result.rows.length ? (

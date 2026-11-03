@@ -12,7 +12,15 @@ const titles: Record<string, { title: string; description: string; section: stri
   "/invoices": { title: "Invoices", description: "Billing documents, balances, and receipts.", section: "Billing" },
   "/payments": { title: "Payments", description: "Customer-linked receipts and collection records.", section: "Billing" },
   "/templates": { title: "Templates", description: "Control the design of financial documents.", section: "Billing" },
+  // Longest-prefix first: the matcher takes the first key that matches, and
+  // "/settings" would otherwise swallow every module below it.
+  "/settings/company": { title: "Company profile", description: "What appears at the top of every invoice.", section: "Settings" },
+  "/settings/invoicing": { title: "Invoice defaults", description: "Numbering, currency, due days, and standing terms.", section: "Settings" },
+  "/settings/payments": { title: "Payment methods", description: "Cash, OMT and Whish, and who receives each one.", section: "Settings" },
+  "/settings/services": { title: "Services", description: "The revenue catalog invoices are built from.", section: "Settings" },
+  "/settings/categories": { title: "Expense categories", description: "How spending is grouped in the ledger.", section: "Settings" },
   "/settings": { title: "Settings", description: "Shape services, categories, and workspace defaults.", section: "System" },
+  "/licensing": { title: "Licensing", description: "Products, entitlements, and activation policy.", section: "System" },
 };
 
 export function TopBar() {

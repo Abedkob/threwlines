@@ -47,3 +47,8 @@ export function initials(name: string) {
 export function maskedLicenseKey(license: { key_prefix: string; key_last_four: string }) {
   return `${license.key_prefix}-•••••-•••••-${license.key_last_four}`;
 }
+
+// "1 invoices in this view" was showing up in five places.
+export function plural(count: number, one: string, many = `${one}s`) {
+  return `${count} ${count === 1 ? one : many}`;
+}

@@ -19,6 +19,8 @@ export type NavigationItem = {
   description: string;
   icon: LucideIcon;
   badge?: "contacts" | "tasks";
+  /** Sub-pages, revealed in the sidebar while this section is open. */
+  children?: { href: string; label: string }[];
 };
 
 export type NavigationGroup = {
@@ -50,7 +52,19 @@ export const navigationGroups: NavigationGroup[] = [
     label: "System",
     links: [
       { href: "/licensing", label: "Licensing", description: "Products and access", icon: KeyRound },
-      { href: "/settings", label: "Settings", description: "Workspace controls", icon: Settings2 },
+      {
+        href: "/settings",
+        label: "Settings",
+        description: "Workspace controls",
+        icon: Settings2,
+        children: [
+          { href: "/settings/company", label: "Company profile" },
+          { href: "/settings/invoicing", label: "Invoice defaults" },
+          { href: "/settings/payments", label: "Payment methods" },
+          { href: "/settings/services", label: "Services" },
+          { href: "/settings/categories", label: "Expense categories" },
+        ],
+      },
     ],
   },
 ];
