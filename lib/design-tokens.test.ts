@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { AA_TEXT_PAIRS, TOKENS, contrastRatio, countLegacyHex, LEGACY_HEX_BUDGET } from "./design-tokens.ts";
 
 // Rules live in the demoted `legacy` cascade layer; only tokens stay in the entry point.
@@ -207,6 +207,10 @@ test("every token is exposed to Tailwind as a theme color", () => {
 
 test("the theme block holds exactly the four-size type scale and no hex literals", () => {
   const theme = themeBlock();
+  // `--text-*: initial` is what clears Tailwind's stock sizes. Without it every stock size
+  // returns and the four-size restriction below still reads as satisfied, so the four sizes
+  // listed are only a restriction while this line is present.
+  assert.match(theme, /--text-\*:\s*initial;/);
   const sizes = [...theme.matchAll(/--text-([a-z]+):\s*([^;]+);/g)].map(([, n, v]) => `${n}=${v.trim()}`);
   assert.deepEqual(sizes, ["xs=0.75rem", "sm=0.8125rem", "base=0.9375rem", "lg=1.25rem"]);
   assert.deepEqual(
@@ -217,9 +221,58 @@ test("the theme block holds exactly the four-size type scale and no hex literals
   assert.doesNotMatch(theme, /--spacing/);
 });
 
-test("the shell geometry tokens stay declared", () => {
-  const css = readFileSync("app/globals.css", "utf8");
-  assert.match(css, /--sidebar-width:\s*248px;/);
-  assert.match(css, /--sidebar-compact-width:\s*82px;/);
-  assert.match(css, /--mobile-nav-height:\s*72px;/);
+// Scoped to the first :root block, not the whole file. --mobile-nav-height is also declared in
+// the @media (max-width: 820px) block, so a whole-file match would stay green with the :root
+// declaration deleted - which is the only declaration the legacy sheets can never beat, and so
+// the only one this guard exists to protect.
+const rootBlock = (): string =>
+  readFileSync("app/globals.css", "utf8").match(/:root\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+test("the shell geometry tokens stay declared on :root", () => {
+  const root = rootBlock();
+  assert.doesNotMatch(root, /@media/, "the capture ran past the end of the :root block");
+  assert.match(root, /--sidebar-width:\s*248px;/);
+  assert.match(root, /--sidebar-compact-width:\s*82px;/);
+  assert.match(root, /--mobile-nav-height:\s*72px;/);
+});
+
+// Controls on a surface and on --ink both need a radius, and the direction allows exactly two
+// values. They are theme names rather than arbitrary values so every screen spells them once.
+test("the radius scale is exactly the two values the direction allows", () => {
+  const root = rootBlock();
+  assert.match(root, /--radius-control:\s*6px;/);
+  assert.match(root, /--radius-surface:\s*10px;/);
+  const theme = themeBlock();
+  assert.deepEqual(
+    [...theme.matchAll(/--radius-([\w-]+):\s*([^;]+);/g)].map(([, n, v]) => `${n}=${v.trim()}`),
+    ["control=var(--radius-control)", "surface=var(--radius-surface)"],
+  );
+});
+
+// The type scale is restricted by clearing Tailwind's stock sizes, which means a class like
+// `text-xl` generates nothing at all: the element silently gets no font-size and typecheck,
+// lint, test and build all stay green. Nothing but this guard notices.
+const FONT_SIZE_CLASS = /(?<![\w-])text-(xs|sm|base|lg|xl|[2-9]xl)(?![\w-])/g;
+const SIZES_THAT_EXIST = new Set(["xs", "sm", "base", "lg"]);
+
+const sourceFiles = (dir: string): string[] =>
+  readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((entry) => /\.tsx?$/.test(entry))
+    .map((entry) => `${dir}/${entry}`);
+
+test("every Tailwind text size used in app/ and components/ is one of the four that exist", () => {
+  const offenders: string[] = [];
+  let scanned = 0;
+  for (const file of [...sourceFiles("app"), ...sourceFiles("components")]) {
+    for (const [match, size] of readFileSync(file, "utf8").matchAll(FONT_SIZE_CLASS)) {
+      scanned += 1;
+      if (!SIZES_THAT_EXIST.has(size)) {
+        offenders.push(`${file}: ${match} generates no font-size`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, []);
+  // Without this the guard would pass just as happily on a broken walk or a regex that matches
+  // nothing, which is the shape of green-but-watching-nothing it is here to replace.
+  assert.ok(scanned >= 3, `matched only ${scanned} text size classes; the walk or pattern is broken`);
 });

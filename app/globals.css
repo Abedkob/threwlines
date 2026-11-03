@@ -73,6 +73,10 @@
   --line-soft: #eaedf2;
   --muted-2: #9aa1ad;
 
+  /* The redesign's radius scale: two values, 6px on controls and 10px on surfaces. The three
+     legacy radii below are the old scale and are retired with the sheets that use them. */
+  --radius-control: 6px;
+  --radius-surface: 10px;
   --radius-sm: 7px;
   --radius: 11px;
   --radius-lg: 18px;
@@ -120,6 +124,9 @@
   --color-ramp-4: var(--ramp-4);
   --color-ramp-5: var(--ramp-5);
   --color-ramp-6: var(--ramp-6);
+
+  --radius-control: var(--radius-control);
+  --radius-surface: var(--radius-surface);
 
   --text-*: initial;
   --text-xs: 0.75rem;
