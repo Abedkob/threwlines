@@ -31,6 +31,7 @@
   --success: #15775B;
   --warning: #9A5B00;
   --danger: #C0352A;
+  --danger-pressed: #9A2A22;
   --success-fill: #30866A;
   --warning-fill: #E49A25;
   --danger-fill: #D85252;
@@ -115,6 +116,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-danger-pressed: var(--danger-pressed);
   --color-success-fill: var(--success-fill);
   --color-warning-fill: var(--warning-fill);
   --color-danger-fill: var(--danger-fill);

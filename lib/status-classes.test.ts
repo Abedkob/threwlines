@@ -1,17 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import * as statusClasses from "./status-classes.ts";
 import {
   ALL_STATUSES,
   INVOICE_STATUS_CLASS,
   INVOICE_STATUS_LABEL,
   LICENSE_STATUS_CLASS,
   PAYMENT_STATUS_CLASS,
-  TASK_STATUS_CLASS,
   invoiceStatusClass,
   licenseStatusClass,
   paymentStatusClass,
-  taskStatusClass,
 } from "./status-classes.ts";
 
 test("every status value maps to a literal class string", () => {
@@ -33,7 +32,6 @@ test("each lookup covers its union exactly, in lifecycle order", () => {
     "cancelled",
   ]);
   assert.deepEqual(Object.keys(PAYMENT_STATUS_CLASS), ["pending", "paid"]);
-  assert.deepEqual(Object.keys(TASK_STATUS_CLASS), ["open", "done"]);
   assert.deepEqual(Object.keys(LICENSE_STATUS_CLASS), [
     "scheduled",
     "active",
@@ -41,14 +39,27 @@ test("each lookup covers its union exactly, in lifecycle order", () => {
     "expired",
     "revoked",
   ]);
-  assert.equal(ALL_STATUSES.length, 6 + 2 + 2 + 5);
+  assert.equal(ALL_STATUSES.length, 6 + 2 + 5);
 });
 
 test("the accessors return the same strings as the records", () => {
   assert.equal(invoiceStatusClass("overdue"), INVOICE_STATUS_CLASS.overdue);
   assert.equal(paymentStatusClass("pending"), PAYMENT_STATUS_CLASS.pending);
-  assert.equal(taskStatusClass("done"), TASK_STATUS_CLASS.done);
   assert.equal(licenseStatusClass("revoked"), LICENSE_STATUS_CLASS.revoked);
+});
+
+// Tasks have no pill in the legacy CSS, so there is nothing here to borrow: `status-pending` and
+// `status-paid` would read "Pending" and "Paid" on a task - the wrong words, looking finished.
+// The tasks screen owns its own treatment and the task that converts it adds the lookup.
+test("no task status lookup is exported, and no status entry claims the task family", () => {
+  assert.deepEqual(
+    Object.keys(statusClasses).filter((name) => /task/i.test(name)),
+    [],
+  );
+  assert.deepEqual(
+    ALL_STATUSES.filter((entry) => (entry.family as string) === "task"),
+    [],
+  );
 });
 
 // The lookup deliberately returns existing legacy class names rather than relocating pill

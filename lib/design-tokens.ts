@@ -17,6 +17,9 @@ export const TOKENS: Record<string, string> = {
   success: "#15775B",
   warning: "#9A5B00",
   danger: "#C0352A",
+  // Pressed/hover value for the danger button. Mirrors the luminance relationship of the
+  // primary/primary-pressed pair, so the two button families darken by the same amount.
+  "danger-pressed": "#9A2A22",
   "success-fill": "#30866A",
   "warning-fill": "#E49A25",
   "danger-fill": "#D85252",

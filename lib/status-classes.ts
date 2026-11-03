@@ -1,4 +1,4 @@
-// Status vocabulary for the four families that appear on more than one screen. Each value maps
+// Status vocabulary for the families that appear on more than one screen. Each value maps
 // to the complete, literal class string for its pill, replacing the interpolated
 // `status-pill status-${row.status}` expressions scattered across the screens: a typo or a new
 // union member now fails a test instead of rendering an unstyled pill.
@@ -8,19 +8,18 @@
 // those rules. Moving the colors in here would leave that guard parsing rules nothing renders.
 // Pills get tokenised, and the guard migrated, by the task that retires their CSS region.
 //
-// The screen-specific families (heat-edge-*, stage-chip, priority-*, channel-*, method-*,
-// template-preview-*, license-event-*, invoice-doc-status-*) join this module as the task that
-// converts their screen reaches them. Follow the shape below: a frozen Record per union, a
-// matching label Record, an accessor, and an entry in ALL_STATUSES.
+// The screen-specific families (task status, heat-edge-*, stage-chip, priority-*, channel-*,
+// method-*, template-preview-*, license-event-*, invoice-doc-status-*) join this module as the
+// task that converts their screen reaches them. Follow the shape below: a frozen Record per
+// union, a matching label Record, an accessor, and an entry in ALL_STATUSES.
 
 import type {
   InvoiceStatus,
   LicenseEffectiveStatus,
   PaymentStatus,
-  TaskStatus,
 } from "../types/db.ts";
 
-export type StatusFamily = "invoice" | "payment" | "task" | "license";
+export type StatusFamily = "invoice" | "payment" | "license";
 
 export type StatusEntry = {
   readonly family: StatusFamily;
@@ -60,19 +59,8 @@ export const PAYMENT_STATUS_LABEL: Readonly<Record<PaymentStatus, string>> = Obj
   paid: "Paid",
 });
 
-// Tasks have no pill of their own in the legacy CSS: the task card renders status as an icon
-// toggle. Rather than name a `.status-open` / `.status-done` rule that does not exist, which
-// would render an unstyled pill, these reuse the only settled/outstanding pair that exists and
-// already clears AA. The task that rebuilds the task screen should give tasks their own pair.
-export const TASK_STATUS_CLASS: Readonly<Record<TaskStatus, string>> = Object.freeze({
-  open: "status-pill status-pending",
-  done: "status-pill status-paid",
-});
-
-export const TASK_STATUS_LABEL: Readonly<Record<TaskStatus, string>> = Object.freeze({
-  open: "Open",
-  done: "Done",
-});
+// Task status has no lookup here: the tasks screen owns its own treatment, and the task that
+// converts that screen adds one.
 
 export const LICENSE_STATUS_CLASS: Readonly<Record<LicenseEffectiveStatus, string>> = Object.freeze({
   scheduled: "license-state license-state-scheduled",
@@ -106,14 +94,6 @@ export function paymentStatusLabel(status: PaymentStatus): string {
   return PAYMENT_STATUS_LABEL[status];
 }
 
-export function taskStatusClass(status: TaskStatus): string {
-  return TASK_STATUS_CLASS[status];
-}
-
-export function taskStatusLabel(status: TaskStatus): string {
-  return TASK_STATUS_LABEL[status];
-}
-
 export function licenseStatusClass(status: LicenseEffectiveStatus): string {
   return LICENSE_STATUS_CLASS[status];
 }
@@ -139,6 +119,5 @@ function entries<T extends string>(
 export const ALL_STATUSES: ReadonlyArray<StatusEntry> = Object.freeze([
   ...entries("invoice", INVOICE_STATUS_CLASS, INVOICE_STATUS_LABEL),
   ...entries("payment", PAYMENT_STATUS_CLASS, PAYMENT_STATUS_LABEL),
-  ...entries("task", TASK_STATUS_CLASS, TASK_STATUS_LABEL),
   ...entries("license", LICENSE_STATUS_CLASS, LICENSE_STATUS_LABEL),
 ]);

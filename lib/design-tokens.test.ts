@@ -126,6 +126,32 @@ test("status and license pills meet WCAG AA text contrast", () => {
   assert.deepEqual(failures, []);
 });
 
+// A filled button changes background on hover and press while its white label stays put, so the
+// pressed value carries the same AA obligation as the resting one. --danger-fill is the trap
+// here: white on it is 4.0:1, the exact failure Task 2 fixed on this button, so a hover tinted
+// toward the fill variant would reintroduce the bug one task later.
+test("white text holds AA on every filled button background, resting and pressed", () => {
+  for (const token of ["primary", "primary-pressed", "danger", "danger-pressed"]) {
+    const ratio = contrastRatio(TOKENS.surface, TOKENS[token]);
+    assert.ok(ratio >= 4.5, `--surface text on --${token} is ${ratio.toFixed(2)}:1`);
+  }
+  // Named so the reason --danger-fill is not the hover value is checkable, not just asserted.
+  assert.ok(contrastRatio(TOKENS.surface, TOKENS["danger-fill"]) < 4.5);
+});
+
+// A pressed value has to read as the same colour pressed harder. Tying each pair's darkening to
+// the other keeps one button family from drifting louder than the other.
+test("the two pressed values darken their base by the same proportion", () => {
+  const drop = (base: string, pressed: string): number =>
+    contrastRatio(TOKENS.surface, TOKENS[pressed]) / contrastRatio(TOKENS.surface, TOKENS[base]);
+  const primary = drop("primary", "primary-pressed");
+  const danger = drop("danger", "danger-pressed");
+  assert.ok(
+    Math.abs(primary - danger) < 0.1,
+    `primary darkens by ${primary.toFixed(3)}x but danger by ${danger.toFixed(3)}x`,
+  );
+});
+
 const FOCUS_SHEETS = ["globals", "login", "licensing"];
 
 test("every stylesheet that styles controls defines a focus ring", () => {

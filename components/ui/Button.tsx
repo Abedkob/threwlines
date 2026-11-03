@@ -28,9 +28,9 @@ const BASE = [
 const VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-primary px-3 text-surface hover:bg-primary-pressed",
   secondary: "border border-line bg-surface px-3 text-text hover:bg-canvas",
-  // --danger is the only red that holds AA against white text; --danger-fill does not, so this
-  // variant deliberately has no hover tint. See the report for the missing pressed value.
-  danger: "bg-danger px-3 text-surface",
+  // --danger-pressed, not --danger-fill: white on --danger-fill is 4.0:1, the exact AA failure
+  // Task 2 fixed on this button, so tinting toward the fill variant would reintroduce it.
+  danger: "bg-danger px-3 text-surface hover:bg-danger-pressed active:bg-danger-pressed",
   // A 32px square, transparent until hover.
   icon: "w-8 bg-transparent text-muted hover:bg-canvas",
 };
