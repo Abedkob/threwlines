@@ -18,7 +18,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     await requireSession(await cookies());
     const { id } = await params;
     const body = await readBody(request);
-    await updateService(id, pick<ServiceBody>(body, SERVICE_FIELDS));
+    const input = pick<ServiceBody>(body, SERVICE_FIELDS);
+    if (!input.name) return jsonResponse({ error: "name is required" }, 400);
+    await updateService(id, input);
     return jsonResponse({ ok: true });
   } catch (error) {
     return handleError(error);
