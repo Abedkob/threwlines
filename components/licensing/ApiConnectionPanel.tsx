@@ -19,7 +19,6 @@ import type { LicensedProduct } from "@/types/db";
 const operations = [
   { label: "Activate", path: "/licenses/activate", method: "POST" },
   { label: "Validate", path: "/licenses/validate", method: "POST" },
-  { label: "Heartbeat", path: "/licenses/heartbeat", method: "POST" },
   { label: "Deactivate", path: "/licenses/deactivate", method: "POST" },
 ];
 

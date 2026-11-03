@@ -26,10 +26,17 @@ export function numbers<T extends Record<string, any>>(row: T, keys: string[]): 
 }
 
 export function withEffectiveInvoiceStatus<T extends Invoice>(invoice: T): T {
+  // Compare as "YYYY-MM-DD" strings. The pg driver returns DATE columns as
+  // strings (see lib/db/pool.ts type parser), and this helper is also called
+  // on fixture rows that use the string form.
   const today = new Date().toISOString().slice(0, 10);
+  const due = typeof invoice.due_date === "string"
+    ? invoice.due_date.slice(0, 10)
+    : String(invoice.due_date ?? "").slice(0, 10);
   if (
     invoice.balance_due > 0 &&
-    invoice.due_date < today &&
+    due &&
+    due < today &&
     (invoice.status === "sent" || invoice.status === "partially_paid")
   ) {
     return { ...invoice, status: "overdue" };

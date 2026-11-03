@@ -2,14 +2,25 @@ import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_NAME } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/token";
 
-const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout", "/api/auth/me"]);
+// Exact-match endpoints that must bypass the session check.
+// Must stay narrow — anything added here is unauthenticated.
+const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout"]);
+
+// Path prefixes for public API surfaces. The licensing API is called by
+// third-party customer applications that carry no session cookie.
+const PUBLIC_PREFIXES = ["/api/license/v1/"];
+
+function isPublic(pathname: string): boolean {
+  if (PUBLIC_AUTH.has(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete("x-idv-auth-user");
   requestHeaders.delete("x-idv-auth-email");
 
-  if (PUBLIC_AUTH.has(request.nextUrl.pathname)) {
+  if (isPublic(request.nextUrl.pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
@@ -36,5 +47,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

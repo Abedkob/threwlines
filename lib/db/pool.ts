@@ -1,5 +1,17 @@
 import pg from "pg";
 
+// Return DATE columns (OID 1082) as the raw "YYYY-MM-DD" string instead of a
+// JS Date. The old Supabase client did the same, and client code (date inputs,
+// overdue comparisons, Intl.DateTimeFormat) assumes the string form.
+pg.types.setTypeParser(1082, (value) => value);
+// Return numeric columns (OID 1700) as JavaScript numbers. The default parser
+// hands back strings, which breaks arithmetic ("10" + "20" = "1020") in the
+// couple of places that forget to coerce. Precision loss above 2^53 is not a
+// risk for the money and quantity columns in this schema.
+pg.types.setTypeParser(1700, (value) => value === null ? null : Number(value));
+// bigint (OID 20) likewise — only app_settings.next_invoice_number uses it.
+pg.types.setTypeParser(20, (value) => value === null ? null : Number(value));
+
 type PoolGlobal = typeof globalThis & { __vaultPgPool?: pg.Pool };
 
 // Lazily create a single Pool per process. Stored on globalThis so Next.js

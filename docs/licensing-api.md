@@ -15,6 +15,8 @@ The licensing API is served by the Next.js route handlers under `/api/license/v1
    LICENSE_ALLOWED_ORIGINS=https://your-app.example
    ```
 
+   `LICENSE_ALLOWED_ORIGINS` is a comma-separated allow-list. Browsers calling from an unlisted origin receive no CORS header and the request is blocked. Use `*` only in development.
+
 4. Start the app (`npm run build && npm start`).
 5. Run `scripts/licensing-verification.sql` and make one test activation.
 
@@ -43,9 +45,9 @@ All POST bodies are JSON. Save the `activation_token` returned by activation and
 }
 ```
 
-## Validate or heartbeat
+## Validate
 
-`POST /licenses/validate` or `POST /licenses/heartbeat`
+`POST /licenses/validate`
 
 ```json
 {
@@ -68,7 +70,7 @@ Delete the local token only after the API confirms `ACTIVATION_DEACTIVATED`.
 
 ## Offline verification
 
-Fetch `GET /v1/.well-known/jwks.json`, cache the ES256 public key by `kid`, and verify the token signature, issuer, audience, activation ID, and expiration locally. A client must never contain the private signing key.
+Fetch `GET .well-known/jwks.json` (relative to the base URL above, i.e. `/api/license/v1/.well-known/jwks.json`), cache the ES256 public key by `kid`, and verify the token signature, issuer, audience, activation ID, and expiration locally. A client must never contain the private signing key.
 
 ## Stable errors
 

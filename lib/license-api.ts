@@ -14,23 +14,56 @@ const messages: Record<string, string> = {
   TOKEN_INVALID: "The activation token is invalid or expired.",
   RATE_LIMITED: "Too many requests. Try again later.",
   INVALID_REQUEST: "The request body is invalid.",
+  ORIGIN_NOT_ALLOWED: "This origin is not allowed to call the licensing API.",
 };
 
+const BASE_HEADERS = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "no-store",
+  vary: "Origin",
+};
+
+const DEFAULT_ALLOW_HEADERS = "authorization, content-type, x-request-id";
+const ALLOW_METHODS = "GET, POST, OPTIONS";
+const PREFLIGHT_MAX_AGE = "86400";
+
+function allowedOrigins(): Set<string> {
+  const raw = process.env.LICENSE_ALLOWED_ORIGINS ?? "";
+  const parts = raw.split(",").map((value) => value.trim()).filter(Boolean);
+  return new Set(parts);
+}
+
+function originAllowed(origin: string): boolean {
+  if (!origin) return false;
+  const allowed = allowedOrigins();
+  if (allowed.size === 0) return false;
+  if (allowed.has("*")) return true;
+  return allowed.has(origin);
+}
+
+// CORS headers for an *approved* origin. Omits ACAO entirely when the origin
+// is not allowed, so browsers block the response. Never a bare "*" when the
+// request Origin is present and matched.
 export function cors(req: Request): Record<string, string> {
-  const configured = (process.env.LICENSE_ALLOWED_ORIGINS ?? "*").split(",").map((value) => value.trim());
   const origin = req.headers.get("origin") ?? "";
-  const allowed = configured.includes("*") ? "*" : configured.includes(origin) ? origin : configured[0] ?? "";
+  if (!origin || !originAllowed(origin)) {
+    return { ...BASE_HEADERS };
+  }
+  const requested = req.headers.get("access-control-request-headers") ?? "";
   return {
-    "access-control-allow-origin": allowed,
-    "access-control-allow-headers": "authorization, content-type, x-request-id",
-    "access-control-allow-methods": "GET, POST, OPTIONS",
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-    vary: "Origin",
+    ...BASE_HEADERS,
+    "access-control-allow-origin": origin,
+    "access-control-allow-headers": requested || DEFAULT_ALLOW_HEADERS,
+    "access-control-allow-methods": ALLOW_METHODS,
+    "access-control-max-age": PREFLIGHT_MAX_AGE,
   };
 }
 
 export function preflight(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  if (origin && !originAllowed(origin)) {
+    return new Response(null, { status: 403, headers: { ...BASE_HEADERS } });
+  }
   return new Response(null, { status: 204, headers: cors(req) });
 }
 
@@ -60,14 +93,30 @@ export async function hash(value: string) {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export function clientIp(req: Request) {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+// Resolve the client IP for rate limiting. We only trust forwarded headers
+// when LICENSE_TRUSTED_PROXY=true is set; otherwise we fall back to a bucket
+// derived from the request's own address. Also split "unknown" buckets per
+// request-id so unauthenticated callers don't share one global quota.
+export function clientIp(req: Request): string {
+  const trustProxy = (process.env.LICENSE_TRUSTED_PROXY ?? "").toLowerCase() === "true";
+  if (trustProxy) {
+    const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    if (forwarded) return forwarded;
+    const cf = req.headers.get("cf-connecting-ip");
+    if (cf) return cf;
+  }
+  return "unknown";
 }
 
 export async function readLicenseBody(req: Request) {
-  const size = Number(req.headers.get("content-length") ?? 0);
-  if (size > 16_384) throw new Error("INVALID_REQUEST");
-  const parsed = await req.json();
+  const text = await req.text();
+  if (text.length > 16_384) throw new Error("INVALID_REQUEST");
+  let parsed: unknown;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("INVALID_REQUEST");
+  }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("INVALID_REQUEST");
   return parsed as Record<string, unknown>;
 }
@@ -81,11 +130,22 @@ export function optionalString(value: unknown, max: number) {
   return typeof value === "string" ? value.slice(0, max) : null;
 }
 
+// License keys look like "IDV-<product>-XXXXX-XXXXX-...-XXXXX" where each
+// group is 5 uppercase alphanumerics. Validate before touching the DB so the
+// RPC isn't a cheap enumeration target.
+const LICENSE_KEY_RE = /^IDV-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$/;
+export function requiredLicenseKey(value: unknown): string {
+  const key = requiredString(value, 200);
+  if (!LICENSE_KEY_RE.test(key)) throw new Error("LICENSE_INVALID");
+  return key;
+}
+
 export async function rateLimit(req: Request, operation: string, limit: number) {
-  const forwarded = clientIp(req);
-  const ip = forwarded === "unknown" ? req.headers.get("cf-connecting-ip") || "unknown" : forwarded;
-  const bucket = `${operation}:${await hash(ip)}`;
-  return Boolean(await rpc("license_rate_limit_hit", [bucket, limit, 60]));
+  const ip = clientIp(req);
+  const identity = ip === "unknown"
+    ? `${operation}:unknown:${req.headers.get("x-request-id") ?? crypto.randomUUID()}`
+    : `${operation}:${await hash(ip)}`;
+  return Boolean(await rpc("license_rate_limit_hit", [identity, limit, 60]));
 }
 
 export function bearer(req: Request) {

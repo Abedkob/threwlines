@@ -1,80 +1,123 @@
-type TokenPayload = {
-  iss: string;
+import { importJWK, SignJWT, jwtVerify, type JWTPayload } from "jose";
+
+const ISSUER = "idevelopit-vault";
+const ALG = "ES256";
+
+export type LicenseTokenClaims = JWTPayload & {
+  aid: string;
+  tv: number;
+  entitlements: Record<string, unknown>;
+  check_after: number;
+  grace_until: number;
+  // iss, aud, sub, iat, nbf, exp, jti come from JWTPayload itself.
+};
+
+function getKeyId() {
+  return process.env.LICENSE_SIGNING_KEY_ID ?? "idv-license-1";
+}
+
+async function privateKey() {
+  const raw = process.env.LICENSE_SIGNING_PRIVATE_JWK;
+  if (!raw) throw new Error("LICENSE_SIGNING_PRIVATE_JWK is not configured");
+  const jwk = JSON.parse(raw);
+  return importJWK(jwk, ALG);
+}
+
+async function publicKey() {
+  const raw = process.env.LICENSE_SIGNING_PUBLIC_JWK;
+  if (!raw) throw new Error("TOKEN_CONFIGURATION_ERROR");
+  const jwk = JSON.parse(raw);
+  return importJWK(jwk, ALG);
+}
+
+export async function signLicenseToken(payload: {
   aud: string;
   sub: string;
   aid: string;
   tv: number;
   entitlements: Record<string, unknown>;
-  iat: number;
-  nbf: number;
-  check_after: number;
-  grace_until: number;
-  exp: number;
-};
-
-function encodeBytes(bytes: Uint8Array) {
-  return Buffer.from(bytes).toString("base64url");
-}
-
-function decodeBytes(value: string) {
-  return new Uint8Array(Buffer.from(value, "base64url"));
-}
-
-function encodeJson(value: unknown) {
-  return encodeBytes(new TextEncoder().encode(JSON.stringify(value)));
-}
-
-export async function signLicenseToken(payload: Omit<TokenPayload, "iss" | "iat" | "nbf" | "check_after" | "grace_until" | "exp"> & {
   validationHours: number;
   offlineGraceDays: number;
 }) {
-  const privateJwk = JSON.parse(process.env.LICENSE_SIGNING_PRIVATE_JWK ?? "null");
-  if (!privateJwk) throw new Error("LICENSE_SIGNING_PRIVATE_JWK is not configured");
-  const keyId = process.env.LICENSE_SIGNING_KEY_ID ?? "idv-license-1";
   const now = Math.floor(Date.now() / 1000);
   const checkAfter = now + payload.validationHours * 3600;
   const graceUntil = checkAfter + payload.offlineGraceDays * 86400;
-  const claims: TokenPayload = {
-    iss: "idevelopit-vault",
-    aud: payload.aud,
-    sub: payload.sub,
+  const jti = crypto.randomUUID();
+  const kid = getKeyId();
+  const key = await privateKey();
+  const token = await new SignJWT({
     aid: payload.aid,
     tv: payload.tv,
     entitlements: payload.entitlements,
-    iat: now,
-    nbf: now - 5,
     check_after: checkAfter,
     grace_until: graceUntil,
-    exp: graceUntil,
+  })
+    .setProtectedHeader({ alg: ALG, typ: "JWT", kid })
+    .setIssuer(ISSUER)
+    .setAudience(payload.aud)
+    .setSubject(payload.sub)
+    .setJti(jti)
+    .setIssuedAt(now)
+    .setNotBefore(now - 5)
+    .setExpirationTime(graceUntil)
+    .sign(key);
+  return {
+    token,
+    claims: {
+      iss: ISSUER,
+      aud: payload.aud,
+      sub: payload.sub,
+      aid: payload.aid,
+      tv: payload.tv,
+      entitlements: payload.entitlements,
+      jti,
+      iat: now,
+      nbf: now - 5,
+      check_after: checkAfter,
+      grace_until: graceUntil,
+      exp: graceUntil,
+    } satisfies LicenseTokenClaims,
   };
-  const header = encodeJson({ alg: "ES256", typ: "JWT", kid: keyId });
-  const body = encodeJson(claims);
-  const input = new TextEncoder().encode(`${header}.${body}`);
-  const key = await crypto.subtle.importKey("jwk", privateJwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
-  const signature = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, input));
-  return { token: `${header}.${body}.${encodeBytes(signature)}`, claims };
 }
 
-export async function verifyLicenseToken(token: string) {
-  const [header, body, signature, extra] = token.split(".");
-  if (!header || !body || !signature || extra) throw new Error("TOKEN_INVALID");
-  const publicJwk = JSON.parse(process.env.LICENSE_SIGNING_PUBLIC_JWK ?? "null");
-  if (!publicJwk) throw new Error("TOKEN_CONFIGURATION_ERROR");
-  const key = await crypto.subtle.importKey("jwk", publicJwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
-  const valid = await crypto.subtle.verify(
-    { name: "ECDSA", hash: "SHA-256" },
-    key,
-    decodeBytes(signature),
-    new TextEncoder().encode(`${header}.${body}`),
-  );
-  if (!valid) throw new Error("TOKEN_INVALID");
-  const claims = JSON.parse(new TextDecoder().decode(decodeBytes(body))) as TokenPayload;
-  if (claims.iss !== "idevelopit-vault" || !claims.sub || !claims.aid || claims.exp <= Math.floor(Date.now() / 1000)) throw new Error("TOKEN_INVALID");
-  return claims;
+// Verify an activation token. Pass expectedAudience to bind the check to a
+// specific product_code (so a token issued for product A cannot be presented
+// against product B's routes). Omit it when the route doesn't know the
+// product up-front (validate/deactivate — they still cross-check sub/aid
+// against the DB row that the aid resolves to).
+export async function verifyLicenseToken(token: string, expectedAudience?: string): Promise<LicenseTokenClaims> {
+  const kid = getKeyId();
+  const key = await publicKey();
+  try {
+    const { payload, protectedHeader } = await jwtVerify(token, key, {
+      algorithms: [ALG],
+      issuer: ISSUER,
+      audience: expectedAudience,
+    });
+    if (protectedHeader.alg !== ALG) throw new Error("TOKEN_INVALID");
+    if (protectedHeader.kid !== kid) throw new Error("TOKEN_INVALID");
+    const aid = payload.aid;
+    const tv = payload.tv;
+    const entitlements = payload.entitlements;
+    if (typeof aid !== "string" || typeof tv !== "number") throw new Error("TOKEN_INVALID");
+    if (!payload.sub) throw new Error("TOKEN_INVALID");
+    return {
+      ...payload,
+      aid,
+      tv,
+      entitlements: (entitlements ?? {}) as Record<string, unknown>,
+      check_after: typeof payload.check_after === "number" ? payload.check_after : 0,
+      grace_until: typeof payload.grace_until === "number" ? payload.grace_until : 0,
+    };
+  } catch (caught) {
+    if (caught instanceof Error && caught.message === "TOKEN_INVALID") throw caught;
+    throw new Error("TOKEN_INVALID");
+  }
 }
 
 export function publicJwks() {
-  const key = JSON.parse(process.env.LICENSE_SIGNING_PUBLIC_JWK ?? "null");
-  if (!key) throw new Error("LICENSE_SIGNING_PUBLIC_JWK is not configured");
-  return { keys: [{ ...key, kid: process.env.LICENSE_SIGNING_KEY_ID ?? "idv-license-1", use: "sig", alg: "ES256" }] };
+  const raw = process.env.LICENSE_SIGNING_PUBLIC_JWK;
+  if (!raw) throw new Error("LICENSE_SIGNING_PUBLIC_JWK is not configured");
+  const key = JSON.parse(raw);
+  return { keys: [{ ...key, kid: getKeyId(), use: "sig", alg: ALG }] };
 }

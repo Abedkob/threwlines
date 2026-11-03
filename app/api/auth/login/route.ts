@@ -12,6 +12,11 @@ type ProfileRow = {
   app_role: string;
 };
 
+// Precomputed bcrypt-cost-12 hash of a value we never accept as a real password.
+// Used to burn the same CPU time on the unknown-email path as on the
+// known-email path, so attackers can't enumerate accounts via login timing.
+const DUMMY_HASH = "$2b$12$ZZkuvQ0WZNog1fjWUJkRK.yBSnFSqeksNJ4Fn0XxI9JR3PjmI3IEm";
+
 function fail(message: string, status: number) {
   return NextResponse.json({ ok: false, message }, { status });
 }
@@ -31,7 +36,8 @@ export async function POST(request: NextRequest) {
     "select id, email, name, password_hash, app_role from profiles where lower(email) = $1",
     [email],
   );
-  const valid = profile ? await verifyPassword(password, profile.password_hash) : false;
+  // Always run bcrypt so timing does not reveal whether the email exists.
+  const valid = await verifyPassword(password, profile?.password_hash ?? DUMMY_HASH);
   if (!profile || !valid) return fail("Invalid email or password.", 401);
 
   const token = await signSessionToken({

@@ -9,6 +9,7 @@ import {
   rateLimit,
   readLicenseBody,
   requestIdOf,
+  requiredLicenseKey,
   requiredString,
   tokenResponse,
 } from "@/lib/license-api";
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     const input = await readLicenseBody(request);
     const installationId = requiredString(input.installation_id, 500);
     const data = await rpc<Record<string, unknown>>("license_api_activate", [
-      requiredString(input.license_key, 200),
+      requiredLicenseKey(input.license_key),
       requiredString(input.product_code, 40),
       await hash(installationId),
       optionalString(input.device_label, 120),
