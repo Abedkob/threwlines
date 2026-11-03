@@ -32,6 +32,10 @@ import type {
 
 type View = "open" | "done" | "all";
 
+// Checklist row actions: always visible on touch, revealed on hover from md up.
+const ROW_ACTION =
+  "h-6 shrink-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100";
+
 function ChecklistItem({
   item,
   children,
@@ -96,10 +100,14 @@ function ChecklistItem({
     setAddingChild(false);
   }
   return (
-    <div className={`checklist-branch ${item.parent_id ? "sub-branch" : ""}`}>
-      <div className="checklist-row">
+    <div className={item.parent_id ? "ml-5 border-l border-line pl-3" : ""}>
+      <div className="group flex min-h-8 items-center gap-2 border-b border-line py-1 last:border-b-0">
         <button
-          className={`check-button ${item.done ? "checked" : ""}`}
+          className={`grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors ${
+            item.done
+              ? "border-success bg-success text-surface"
+              : "border-line bg-surface hover:border-primary"
+          }`}
           onClick={() =>
             run(() =>
               apiFetch(`/api/tasks/${item.task_id}/items/${item.id}`, {
@@ -111,15 +119,16 @@ function ChecklistItem({
           disabled={busy}
           aria-label={`${item.done ? "Reopen" : "Complete"} ${item.content}`}
         >
-          {item.done ? <Check size={12} /> : null}
+          {item.done ? <Check size={11} strokeWidth={3} /> : null}
         </button>
         {editing ? (
-          <form className="inline-edit" onSubmit={save}>
+          <form className="flex min-w-0 flex-1 items-center gap-1" onSubmit={save}>
             <input
               autoFocus
               value={content}
               onChange={(event) => setContent(event.target.value)}
               aria-label="Checklist item text"
+              className="min-w-0 flex-1 rounded-control border border-line px-2 py-1 text-sm"
             />
             <button aria-label="Save item">
               <Save size={13} />
@@ -137,9 +146,15 @@ function ChecklistItem({
           </form>
         ) : (
           <>
-            <span className={item.done ? "done-copy" : ""}>{item.content}</span>
+            <span
+              className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-muted line-through" : "text-text"}`}
+            >
+              {item.content}
+            </span>
+            {/* Row actions stay out of the way on pointer devices and stay put
+                on touch, where there is no hover to reveal them. */}
             <button
-              className="row-action"
+              className={`${ROW_ACTION} row-action`}
               onClick={() => setEditing(true)}
               aria-label={`Edit ${item.content}`}
             >
@@ -147,7 +162,7 @@ function ChecklistItem({
             </button>
             {!item.parent_id && (
               <button
-                className="row-action add-child"
+                className={`${ROW_ACTION} row-action add-child text-xs`}
                 onClick={() => setAddingChild((value) => !value)}
                 aria-label={`Add sub-item to ${item.content}`}
               >
@@ -157,7 +172,7 @@ function ChecklistItem({
             )}
           </>
         )}
-        <button type="button" className="row-action checklist-delete-button" onClick={() => setDeleting(true)} disabled={busy} aria-label={`Delete ${item.content}`} title="Delete checklist item"><Trash2 size={12} /></button>
+        <button type="button" className={`${ROW_ACTION} row-action checklist-delete-button`} onClick={() => setDeleting(true)} disabled={busy} aria-label={`Delete ${item.content}`} title="Delete checklist item"><Trash2 size={12} /></button>
       </div>
       {addingChild && (
         <form className="add-item-form nested-add" onSubmit={addChild}>
@@ -168,6 +183,7 @@ function ChecklistItem({
             onChange={(event) => setChildContent(event.target.value)}
             placeholder="Add a sub-item"
             required
+            className="text-sm"
           />
           <button disabled={busy}>Add</button>
         </form>
@@ -429,8 +445,11 @@ function TaskCard({
               onChange={(event) => setNewItem(event.target.value)}
               placeholder="Add a checklist item"
               required
+              className="text-sm"
             />
-            <button disabled={busy}>Add</button>
+            <button disabled={busy} className="text-xs">
+              Add
+            </button>
           </form>
         </div>
       )}
