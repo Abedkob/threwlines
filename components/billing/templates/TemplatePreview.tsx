@@ -40,7 +40,7 @@ export function TemplatePreview({ config, documentType, templateName, appSetting
         )}
 
         <div className="preview-registration-line">
-          <span>IDV / DOCUMENT SYSTEM</span>
+          <span>THREWLINES / DOCUMENT SYSTEM</span>
           <span>{documentType.toUpperCase()} — 01</span>
         </div>
 

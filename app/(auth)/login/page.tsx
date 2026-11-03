@@ -88,9 +88,9 @@ export default function LoginPage() {
               <div className="login-lock" aria-hidden="true"><KeyRound size={19} /></div>
               <div>
                 <p className="eyebrow">Authenticated access</p>
-                <h2>Enter the vault</h2>
+                <h2>Sign in to ThrewLines</h2>
               </div>
-              <span className="login-form-code">IDV / 01</span>
+              <span className="login-form-code">TL / 01</span>
             </header>
 
             <p className="form-intro">Use the credentials assigned to this shared workspace.</p>
