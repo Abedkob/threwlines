@@ -262,9 +262,15 @@ test("the shell geometry tokens stay declared on :root", () => {
   assert.match(root, /--mobile-nav-height:\s*72px;/);
 });
 
-// Controls on a surface and on --ink both need a radius, and the direction allows exactly two
-// values. They are theme names rather than arbitrary values so every screen spells them once.
-test("the radius scale is exactly the two values the direction allows", () => {
+// Named theme values rather than arbitrary ones, so every screen spells the radius once.
+//
+// This asserts the redesign's two radii are declared and projected, NOT that they are the only
+// radii Tailwind can emit: stock `rounded-*` is deliberately left alone. Clearing it the way
+// `--text-*: initial` clears the type scale would be wrong here, because the direction's own
+// Components section gives status pills a third value (4px), so "no third value" is not
+// actually true of the spec. The earlier title claimed the stronger guarantee; this one does
+// not. If the stock scale is ever cleared, a usage guard like the text-size one belongs with it.
+test("the redesign's radius values are declared on :root and projected into Tailwind", () => {
   const root = rootBlock();
   assert.match(root, /--radius-control:\s*6px;/);
   assert.match(root, /--radius-surface:\s*10px;/);

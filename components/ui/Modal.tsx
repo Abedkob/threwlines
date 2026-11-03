@@ -5,6 +5,20 @@ import type { MouseEvent, ReactNode } from "react";
 import { X } from "lucide-react";
 import { Button } from "./Button";
 
+// Tab stops inside the dialog. The dialog container itself carries tabIndex={-1} so that it can
+// take initial focus, and is excluded here by the [tabindex="-1"] clause.
+const FOCUSABLE = [
+  "a[href]",
+  "area[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "iframe",
+  "[contenteditable]:not([contenteditable='false'])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 export type ModalProps = {
   open: boolean;
   onClose: () => void;
@@ -43,6 +57,32 @@ export function Modal({ open, onClose, title, children, actions }: ModalProps) {
       if (event.key === "Escape") {
         event.stopPropagation();
         latestOnClose.current();
+        return;
+      }
+      // aria-modal="true" is a promise to assistive technology that the rest of the page is
+      // unreachable. Without a trap, Tab walks straight out of the dialog into the page behind
+      // the overlay, where the user cannot see what they have focused.
+      if (event.key !== "Tab") return;
+      const root = dialog.current;
+      if (!root) return;
+      const stops = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (element) => element.offsetParent !== null || element === document.activeElement,
+      );
+      const active = document.activeElement;
+      if (stops.length === 0) {
+        event.preventDefault();
+        root.focus();
+        return;
+      }
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const outside = !(active instanceof Node) || !root.contains(active);
+      if (!event.shiftKey && (outside || active === last)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && (outside || active === first || active === root)) {
+        event.preventDefault();
+        last.focus();
       }
     }
     document.addEventListener("keydown", onKeyDown);
