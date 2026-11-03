@@ -189,7 +189,9 @@ function TaskCard({
   onRefresh: () => Promise<unknown>;
   onDeleted: () => Promise<void>;
 }) {
-  const [expanded, setExpanded] = useState(task.status === "open");
+  // Collapsed by default: an open checklist editor on every row turned the list
+  // into four tasks per screen, which defeats the point of a work queue.
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [assignee, setAssignee] = useState(task.assigned_to ?? "");
@@ -254,11 +256,17 @@ function TaskCard({
   }
   return (
     <article
-      className={`task-card priority-border-${task.priority} ${task.status === "done" ? "task-complete" : ""}`}
+      className={`border-b border-l-[3px] border-line bg-surface transition-colors hover:bg-canvas ${
+        task.priority === "high"
+          ? "border-l-danger"
+          : task.priority === "normal"
+            ? "border-l-ramp-3"
+            : "border-l-line"
+      }`}
     >
-      <header className="task-card-header">
+      <header className="flex items-center gap-2 px-3 py-2">
         <button
-          className={`task-status-button ${task.status === "done" ? "done" : ""}`}
+          className={`shrink-0 rounded-control p-0.5 ${task.status === "done" ? "text-success" : "text-muted hover:text-primary"}`}
           onClick={() =>
             run(() =>
               apiFetch(`/api/tasks/${task.id}`, {
@@ -276,45 +284,49 @@ function TaskCard({
             <Circle size={19} />
           )}
         </button>
-        <div className="task-title">
-          <h2>{task.title}</h2>
-          <div>
-            <span className={`priority-pill priority-${task.priority}`}>
-              {task.priority}
-            </span>
-            {task.assignee ? (
-              <span>
-                <span
-                  className="mini-avatar"
-                  style={{ backgroundColor: task.assignee.color }}
-                >
-                  {initials(task.assignee.name)}
-                </span>
-                {task.assignee.name}
-              </span>
-            ) : (
-              <span>
-                <UserRound size={12} />
-                Unassigned
-              </span>
-            )}
-            <span
-              className={
-                task.due_date &&
-                task.due_date < new Date().toISOString().slice(0, 10) &&
-                task.status === "open"
-                  ? "overdue"
-                  : ""
-              }
-            >
-              <CalendarDays size={12} />
-              {fmtDay(task.due_date)}
-            </span>
-          </div>
-        </div>
-        <span className="task-progress">
-          {completed}/{task.items?.length ?? 0}
+        <h2
+          className={`min-w-0 flex-1 truncate text-sm ${task.status === "done" ? "text-muted line-through" : "text-text"}`}
+          title={task.title}
+        >
+          {task.title}
+        </h2>
+        {/* Only "high" is labelled: most tasks are normal, so printing every
+            priority put a column of noise beside every title. Low and normal
+            are carried by the left edge instead. */}
+        {task.priority === "high" && (
+          <span className="shrink-0 text-xs text-danger">High</span>
+        )}
+        {task.assignee ? (
+          <span
+            className="mini-avatar shrink-0"
+            style={{ backgroundColor: task.assignee.color }}
+            title={task.assignee.name}
+          >
+            {initials(task.assignee.name)}
+          </span>
+        ) : (
+          <UserRound size={13} className="shrink-0 text-muted" aria-label="Unassigned" />
+        )}
+        <span
+          className={`shrink-0 text-xs tabular-nums ${
+            task.due_date &&
+            task.due_date < new Date().toISOString().slice(0, 10) &&
+            task.status === "open"
+              ? "text-danger"
+              : "text-muted"
+          }`}
+        >
+          <CalendarDays size={12} className="mr-1 inline align-[-2px]" />
+          {fmtDay(task.due_date)}
         </span>
+        {(task.items?.length ?? 0) > 0 && (
+          <span
+            className="shrink-0 text-xs tabular-nums text-muted"
+            title={`${completed} of ${task.items?.length} checklist items done`}
+          >
+            {completed}/{task.items?.length}
+          </span>
+        )}
         <button
           className="row-action task-edit-button"
           onClick={() => setEditing((value) => !value)}
@@ -534,7 +546,7 @@ export function TasksClient() {
           <button onClick={() => void load()}>Try again</button>
         </div>
       )}
-      <section className="task-list">
+      <section className="overflow-hidden rounded-surface border border-line bg-surface [&>article:last-child]:border-b-0">
         {result.rows.map((task) => (
           <TaskCard
             key={task.id}
