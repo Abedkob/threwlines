@@ -175,7 +175,7 @@ create table if not exists public.app_settings (
 );
 
 insert into public.app_settings (id, company_name)
-values (1, 'idevelopit-vault')
+values (1, 'ThrewLines')
 on conflict (id) do nothing;
 
 create table if not exists public.document_templates (

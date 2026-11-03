@@ -56,11 +56,11 @@ export default function LoginPage() {
 
       <header className="login-topbar">
         <div className="login-brand">
-          <span className="brand-logo-frame login-logo-frame" aria-hidden="true">
-            <img src="/idevelopit-vault-logo.jpeg" alt="" />
+          <span className="brand-logo-frame login-logo-frame p-1" aria-hidden="true">
+            <img src="/threwlines-bars.svg" alt="" className="scale-100 object-contain" />
           </span>
           <span className="login-brand-copy">
-            <strong>idevelopit-vault</strong>
+            <strong>ThrewLines</strong>
             <small>Internal operations</small>
           </span>
         </div>
@@ -75,7 +75,7 @@ export default function LoginPage() {
         <section className="login-context" aria-label="Workspace introduction">
           <div className="login-coordinate"><span>01</span><i /> Workspace access</div>
           <div className="login-copy">
-            <p className="eyebrow">The operating layer for iDevelopIt</p>
+            <p className="eyebrow">The operating layer for the whole studio</p>
             <h1>One place for<br /><em>the whole operation.</em></h1>
             <p>Client relationships, delivery, billing, and team priorities—connected in one private view.</p>
           </div>
@@ -111,7 +111,7 @@ export default function LoginPage() {
                     inputMode="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="name@idevelopit.agency"
+                    placeholder="name@threwlines.com"
                     required
                     autoFocus
                   />
@@ -165,7 +165,7 @@ export default function LoginPage() {
 
       <footer className="login-page-footer">
         <span><i /> Shared operating view</span>
-        <span>IDEVELOPIT / INTERNAL SYSTEM</span>
+        <span>THREWLINES / INTERNAL SYSTEM</span>
         <span>BEIRUT · LB</span>
       </footer>
     </main>

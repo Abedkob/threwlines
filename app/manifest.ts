@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "idevelopit-vault",
-    short_name: "iDevelop Vault",
+    name: "ThrewLines",
+    short_name: "ThrewLines",
     description: "A private workspace for client relationships, work, billing, and spending.",
     start_url: "/dashboard",
     display: "standalone",
@@ -11,9 +11,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#171a23",
     icons: [
       {
-        src: "/idevelopit-vault-logo.jpeg",
-        sizes: "512x512",
-        type: "image/jpeg",
+        src: "/threwlines-mark.svg",
+        sizes: "any",
+        type: "image/svg+xml",
         purpose: "any",
       },
     ],

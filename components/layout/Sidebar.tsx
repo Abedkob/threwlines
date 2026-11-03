@@ -59,9 +59,9 @@ export function Sidebar({
       inert={mobile && !open}
     >
       <div className="sidebar-brand">
-        <Link href="/dashboard" className="sidebar-brand-link" onClick={onClose} aria-label="idevelopit-vault dashboard">
-          <span className="brand-logo-frame" aria-hidden="true"><img src="/idevelopit-vault-logo.jpeg" alt="" /></span>
-          <span className="brand-copy"><strong>idevelopit</strong><small>vault</small></span>
+        <Link href="/dashboard" className="sidebar-brand-link" onClick={onClose} aria-label="ThrewLines dashboard">
+          <span className="brand-logo-frame p-1" aria-hidden="true"><img src="/threwlines-bars.svg" alt="" className="scale-100 object-contain" /></span>
+          <span className="brand-copy"><strong>ThrewLines</strong><small>workspace</small></span>
         </Link>
         <button className="sidebar-collapse-toggle" onClick={onToggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
           {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}

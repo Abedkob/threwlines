@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "idevelopit-vault", template: "%s · idevelopit-vault" },
+  title: { default: "ThrewLines", template: "%s · ThrewLines" },
   description: "One shared place for the team's work, pipeline, and spending.",
   icons: {
-    icon: "/idevelopit-vault-logo.jpeg",
-    apple: "/idevelopit-vault-logo.jpeg",
+    icon: "/threwlines-mark.svg",
+    apple: "/threwlines-mark.svg",
   },
 };
 

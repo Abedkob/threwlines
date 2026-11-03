@@ -23,12 +23,12 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="mobile-shell-brand" aria-label="idevelopit-vault">
-        <span className="brand-logo-frame" aria-hidden="true"><img src="/idevelopit-vault-logo.jpeg" alt="" /></span>
-        <span><strong>idevelopit</strong><small>vault</small></span>
+      <div className="mobile-shell-brand" aria-label="ThrewLines">
+        <span className="brand-logo-frame p-1" aria-hidden="true"><img src="/threwlines-bars.svg" alt="" className="scale-100 object-contain" /></span>
+        <span><strong>ThrewLines</strong><small>workspace</small></span>
       </div>
       <div className="topbar-copy">
-        <p className="eyebrow">{content.section} <i /> idevelopit-vault</p>
+        <p className="eyebrow">{content.section} <i /> ThrewLines</p>
         <h1>{content.title}</h1>
         <p>{content.description}</p>
       </div>
