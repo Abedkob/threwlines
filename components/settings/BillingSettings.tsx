@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Building2, FileText, LoaderCircle, Upload, WalletCards } from "lucide-react";
 import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { SettingsSection } from "@/components/settings/SettingsSection";
 import type { AppSettings } from "@/types/db";
 
 export function BillingSettings() {
@@ -63,19 +64,19 @@ export function BillingSettings() {
   const area = (key: keyof AppSettings, label: string) => <label className="field span-2"><span>{label}</span><textarea rows={3} value={String(value[key] ?? "")} onChange={(e) => set(key, e.target.value as never)} /></label>;
   return <form className="billing-settings" onSubmit={save}>
     <header className="settings-intro billing-settings-intro"><span><Building2 size={19}/></span><div><p className="eyebrow">Billing foundation</p><h2>Company & invoice settings</h2><p>These defaults flow into contracts and invoices. Finalized invoices keep snapshots.</p></div><button className="button button-primary" disabled={busy}>Save billing settings</button></header>
-    <div className="billing-settings-grid">
-      <section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><Building2 size={14}/> Company profile</p><h3>Shown on invoices</h3></div></div><div className="form-grid">
+    <div className="billing-settings-grid grid-cols-1 gap-3">
+      <SettingsSection title="Company profile" summary="Name, contact details and the logo shown on invoices" icon={<Building2 size={15} />} defaultOpen><div className="form-grid">
         {text("company_name","Company name")}{text("company_tagline","Tagline")}{text("company_phone","Phone","tel")}{text("company_email","Email","email")}{text("company_website","Website","url")}
         <div className="field span-2 asset-fields">{(["logo","stamp"] as const).map((kind) => <label className="asset-upload" key={kind}>{previews[kind] ? <img src={previews[kind]!} alt={`${kind} preview`} /> : <Upload size={22}/>}<span>{kind === "logo" ? "Upload logo" : "Upload stamp"}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => void upload(kind,e.target.files?.[0])}/></label>)}</div>
-      </div></section>
-      <section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><FileText size={14}/> Invoice defaults</p><h3>Numbering and content</h3></div></div><div className="form-grid">
+      </div></SettingsSection>
+      <SettingsSection title="Invoice defaults" summary="Numbering, currency, due days and the standing terms" icon={<FileText size={15} />}><div className="form-grid">
         {text("invoice_prefix","Prefix")}{text("next_invoice_number","Next number","number")}{text("invoice_number_padding","Number padding","number")}{text("default_currency","Currency")}{text("default_due_days","Due days","number")}{area("default_terms","Terms")}{area("default_footer","Footer")}{area("default_payment_instructions","Payment instructions")}
-      </div></section>
-      <section className="settings-card span-2"><div className="section-heading"><div><p className="eyebrow"><WalletCards size={14}/> Payment methods</p><h3>Cash, OMT and Whish only</h3></div></div><div className="form-grid">
+      </div></SettingsSection>
+      <SettingsSection title="Payment methods" summary="Cash, OMT and Whish, and who receives each one" icon={<WalletCards size={15} />}><div className="form-grid">
         <label className="check-row"><input type="checkbox" checked={value.cash_enabled} onChange={(e)=>set("cash_enabled",e.target.checked)}/> Enable cash</label>
         <label className="check-row"><input type="checkbox" checked={value.omt_enabled} onChange={(e)=>set("omt_enabled",e.target.checked)}/> Enable OMT</label>{text("omt_recipient_name","OMT recipient")}{text("omt_phone","OMT phone","tel")}
         <label className="check-row"><input type="checkbox" checked={value.whish_enabled} onChange={(e)=>set("whish_enabled",e.target.checked)}/> Enable Whish</label>{text("whish_recipient_name","Whish recipient")}{text("whish_phone","Whish phone","tel")}
-      </div></section>
+      </div></SettingsSection>
     </div>{message && <div className="drawer-error" role="status">{message}</div>}
   </form>;
 }

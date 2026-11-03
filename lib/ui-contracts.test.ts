@@ -112,3 +112,13 @@ test("the Modal primitive locks and releases body scroll", () => {
     "a lock without a matching release leaves the page unscrollable",
   );
 });
+
+test("the settings accordion cannot submit the form it sits inside", () => {
+  // The billing modules are rendered inside a <form>. A button without an
+  // explicit type defaults to submit, so expanding a section would save the
+  // settings — and in some browsers reload the page.
+  const source = readFileSync("components/settings/SettingsSection.tsx", "utf8");
+  assert.match(source, /type="button"/, "the disclosure trigger must be type=\"button\"");
+  assert.match(source, /aria-expanded=\{open\}/, "state must be exposed to assistive tech");
+  assert.match(source, /aria-controls=\{bodyId\}/, "the trigger must point at its panel");
+});
