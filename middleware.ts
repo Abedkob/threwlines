@@ -3,6 +3,10 @@ import { COOKIE_NAME } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/token";
 
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/auth/")) {
+    return NextResponse.next();
+  }
+
   const isLogin = request.nextUrl.pathname === "/login";
 
   const requestHeaders = new Headers(request.headers);
