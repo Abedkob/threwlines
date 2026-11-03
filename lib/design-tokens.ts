@@ -12,9 +12,14 @@ export const TOKENS: Record<string, string> = {
   "primary-pressed": "#2537B8",
   "primary-wash": "#ECEFFE",
   "accent-line": "#B9FF00",
-  success: "#30866A",
-  warning: "#E49A25",
-  danger: "#D85252",
+  // Text-safe status colors (>= 4.5:1 on surface and canvas) and the brighter
+  // fill variants used for backgrounds, icons, chart bars and dark chrome.
+  success: "#15775B",
+  warning: "#9A5B00",
+  danger: "#C0352A",
+  "success-fill": "#30866A",
+  "warning-fill": "#E49A25",
+  "danger-fill": "#D85252",
   "ramp-1": "#ECEFFE",
   "ramp-2": "#C3CBFA",
   "ramp-3": "#8EA0FF",
@@ -22,6 +27,22 @@ export const TOKENS: Record<string, string> = {
   "ramp-5": "#3449E0",
   "ramp-6": "#2537B8"
 };
+
+// Token pairs (foreground, background) that must clear WCAG AA (4.5:1) as text.
+export const AA_TEXT_PAIRS: ReadonlyArray<[string, string]> = [
+  ["success", "surface"],
+  ["success", "canvas"],
+  ["warning", "surface"],
+  ["warning", "canvas"],
+  ["danger", "surface"],
+  ["danger", "canvas"],
+  ["primary", "surface"],
+  ["primary", "canvas"],
+  ["muted", "surface"],
+  ["muted", "canvas"],
+  ["text", "surface"],
+  ["text", "canvas"]
+];
 
 // Hard ceiling on hex literals in the legacy sheets, excluding :root and @theme.
 // Later migration tasks lower this as screens move to tokens.

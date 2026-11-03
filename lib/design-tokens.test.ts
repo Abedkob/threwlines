@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { TOKENS, contrastRatio, countLegacyHex, LEGACY_HEX_BUDGET } from "./design-tokens.ts";
+import { AA_TEXT_PAIRS, TOKENS, contrastRatio, countLegacyHex, LEGACY_HEX_BUDGET } from "./design-tokens.ts";
 
 test("contrastRatio matches known values", () => {
   assert.equal(Math.round(contrastRatio("#FFFFFF", "#000000")), 21);
@@ -19,4 +19,12 @@ test("legacy hardcoded hex count does not grow", () => {
   const files = ["globals", "login", "document-templates", "licensing", "shell"];
   const total = files.reduce((n, f) => n + countLegacyHex(readFileSync(`app/${f}.css`, "utf8")), 0);
   assert.ok(total <= LEGACY_HEX_BUDGET, `${total} hex literals exceeds budget ${LEGACY_HEX_BUDGET}`);
+});
+
+test("status text colors meet WCAG AA on light surfaces", () => {
+  assert.equal(AA_TEXT_PAIRS.length, 12);
+  for (const [fg, bg] of AA_TEXT_PAIRS) {
+    const ratio = contrastRatio(TOKENS[fg], TOKENS[bg]);
+    assert.ok(ratio >= 4.5, `${fg} on ${bg} is ${ratio.toFixed(2)}:1`);
+  }
 });

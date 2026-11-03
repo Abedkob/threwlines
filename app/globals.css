@@ -12,9 +12,12 @@
   --primary-pressed: #2537B8;
   --primary-wash: #ECEFFE;
   --accent-line: #B9FF00;
-  --success: #30866A;
-  --warning: #E49A25;
-  --danger: #D85252;
+  --success: #15775B;
+  --warning: #9A5B00;
+  --danger: #C0352A;
+  --success-fill: #30866A;
+  --warning-fill: #E49A25;
+  --danger-fill: #D85252;
 
   /* Lifecycle ramp */
   --ramp-1: #ECEFFE;
@@ -48,7 +51,7 @@
   --brand-dark: var(--primary-pressed);
   --brand-soft: var(--primary-wash);
   --vault-lime: var(--accent-line);
-  --attention: var(--warning);
+  --attention: var(--warning-fill);
 
   /* Legacy-only shades with no token yet; literal values preserved. */
   --line-soft: #eaedf2;
@@ -611,8 +614,8 @@ textarea:focus-visible,
 }
 .button-danger:hover {
   color: white;
-  background: var(--danger);
-  border-color: var(--danger);
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
 }
 .button:disabled {
   opacity: 0.5;
@@ -846,7 +849,7 @@ textarea:focus-visible,
 }
 .heat-dot.heat-hot,
 .heat-hot .heat-dot {
-  background: var(--danger);
+  background: var(--danger-fill);
   box-shadow: 0 0 0 3px rgba(216, 82, 82, 0.1);
 }
 .heat-chip {
@@ -1501,7 +1504,7 @@ textarea:focus-visible,
   background: var(--attention);
 }
 .pipeline-customer .pipeline-column-header::before {
-  background: var(--success);
+  background: var(--success-fill);
 }
 .pipeline-lost .pipeline-column-header::before {
   background: #a78086;
@@ -1573,7 +1576,7 @@ textarea:focus-visible,
   background: var(--attention);
 }
 .pipeline-card.heat-edge-hot::before {
-  background: var(--danger);
+  background: var(--danger-fill);
 }
 .pipeline-card:hover {
   transform: translateY(-2px);
@@ -1857,7 +1860,7 @@ textarea:focus-visible,
   background: var(--attention);
 }
 .fill-customer {
-  background: var(--success);
+  background: var(--success-fill);
 }
 .expense-panel {
   min-height: 265px;
@@ -1893,7 +1896,7 @@ textarea:focus-visible,
   border-radius: 3px;
 }
 .priority-high {
-  background: var(--danger);
+  background: var(--danger-fill);
 }
 .priority-low {
   background: #70a596;
@@ -1984,7 +1987,7 @@ textarea:focus-visible,
   background: #9fa6b2;
 }
 .task-card.priority-border-high::before {
-  background: var(--danger);
+  background: var(--danger-fill);
 }
 .task-card.priority-border-low::before {
   background: #5a9f8b;
@@ -2144,8 +2147,8 @@ textarea:focus-visible,
   cursor: pointer;
 }
 .check-button.checked {
-  background: var(--success);
-  border-color: var(--success);
+  background: var(--success-fill);
+  border-color: var(--success-fill);
 }
 .add-child {
   opacity: 0;
@@ -2731,7 +2734,7 @@ textarea:focus-visible,
 }
 .delete-button.confirming {
   color: white;
-  background: var(--danger);
+  background: var(--danger-fill);
 }
 .settings-inline-edit {
   width: 100%;
@@ -3124,7 +3127,7 @@ textarea:focus-visible,
     background: #dd7c4e;
   }
   .mobile-heat-edge.heat-edge-hot {
-    background: var(--danger);
+    background: var(--danger-fill);
   }
   .mobile-contact-main {
     min-width: 0;
