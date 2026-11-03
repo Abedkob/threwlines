@@ -69,12 +69,16 @@ test("every stylesheet that styles controls defines a focus ring", () => {
   }
 });
 
-test("the focus ring derives from --primary rather than a hardcoded blue", () => {
+const FOCUS_RING = /(--focus-ring(?:-dark)?):\s*0 0 0 2px var\(--(\w+)\), 0 0 0 4px var\(--(\w+)\);/g;
+
+test("the focus ring is two solid layers drawn from tokens", () => {
   const css = readFileSync("app/globals.css", "utf8");
-  assert.match(
-    css,
-    /--focus-ring:\s*0 0 0 3px color-mix\(in srgb, var\(--primary\) 32%, transparent\);/,
-  );
+  const rings = new Map<string, [string, string]>();
+  for (const [, name, gap, ring] of css.matchAll(FOCUS_RING)) {
+    rings.set(name, [gap, ring]);
+  }
+  assert.deepEqual(rings.get("--focus-ring"), ["surface", "primary"]);
+  assert.deepEqual(rings.get("--focus-ring-dark"), ["ink", "surface"]);
   for (const f of FOCUS_SHEETS) {
     const sheet = readFileSync(`app/${f}.css`, "utf8");
     const stale = /:focus-visible[^{}]*\{[^{}]*rgba\(61,\s*90,\s*241/.exec(sheet);
@@ -82,23 +86,37 @@ test("the focus ring derives from --primary rather than a hardcoded blue", () =>
   }
 });
 
-test("controls inside the sidebar get a ring that is visible on the dark background", () => {
+test("the focus ring is at least 3:1 against the surface it sits on", () => {
+  // Each ring's outer layer must separate from the surface it is drawn on:
+  // the light ring sits on page and card surfaces, the dark ring on --ink.
+  for (const surface of [TOKENS.surface, TOKENS.canvas]) {
+    const ratio = contrastRatio(TOKENS.primary, surface);
+    assert.ok(ratio >= 3, `--focus-ring is ${ratio.toFixed(2)}:1 on ${surface}`);
+  }
+  const dark = contrastRatio(TOKENS.surface, TOKENS.ink);
+  assert.ok(dark >= 3, `--focus-ring-dark is ${dark.toFixed(2)}:1 on --ink`);
+});
+
+test("controls inside the sidebar use the dark ring", () => {
   const css = readFileSync("app/globals.css", "utf8");
   assert.match(
     css,
-    /\.sidebar[^{}]*:focus-visible[^{}]*\{[^{}]*box-shadow:\s*var\(--focus-ring-on-dark\)/,
-    "no .sidebar focus-visible rule uses --focus-ring-on-dark",
+    /\.sidebar[^{}]*:focus-visible[^{}]*\{[^{}]*box-shadow:\s*var\(--focus-ring-dark\)/,
+    "no .sidebar focus-visible rule uses --focus-ring-dark",
   );
-  const ring = /--focus-ring-on-dark:\s*0 0 0 3px color-mix\(in srgb, var\(--(\w+)\) (\d+)%, transparent\)/.exec(css);
-  assert.ok(ring, "--focus-ring-on-dark is not a 3px color-mix ring");
-  const tint = TOKENS[ring[1]];
-  assert.ok(tint, `--focus-ring-on-dark mixes unknown token --${ring[1]}`);
-  const alpha = Number(ring[2]) / 100;
-  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  const [tr, tg, tb] = channels(tint);
-  const [br, bg, bb] = channels(TOKENS.ink);
-  const toHex = (n: number) => Math.round(n).toString(16).padStart(2, "0");
-  const composited = `#${toHex(tr * alpha + br * (1 - alpha))}${toHex(tg * alpha + bg * (1 - alpha))}${toHex(tb * alpha + bb * (1 - alpha))}`;
-  const ratio = contrastRatio(composited, TOKENS.ink);
-  assert.ok(ratio >= 3, `sidebar focus ring is ${ratio.toFixed(2)}:1 against --ink, below the 3:1 WCAG minimum`);
+});
+
+test("a focus-visible rule never draws a second, competing indicator", () => {
+  // The ring is the single mechanism. A rule may keep an opaque outline only if it
+  // switches the ring off (table rows, where box-shadow is unreliable).
+  const rule = /([^{}]*:focus-visible[^{}]*)\{([^{}]*)\}/g;
+  for (const f of [...FOCUS_SHEETS, "document-templates"]) {
+    const css = readFileSync(`app/${f}.css`, "utf8").replace(/@media\s+print\s*\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
+    for (const [, selector, body] of css.matchAll(rule)) {
+      const outline = /outline\s*:\s*([^;}]+)/.exec(body);
+      if (outline && !/transparent|none|^0$/.test(outline[1].trim())) {
+        assert.match(body, /box-shadow\s*:\s*none/, `${f}.css: ${selector.trim()} draws both an outline and the ring`);
+      }
+    }
+  }
 });

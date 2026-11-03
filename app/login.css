@@ -427,7 +427,6 @@
 }
 
 .login-input-shell:has(input:focus-visible) {
-  border-color: var(--primary);
   box-shadow: var(--focus-ring);
 }
 

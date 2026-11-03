@@ -43,9 +43,9 @@
   transform: translateY(-1px);
 }
 
-.template-background-choice:focus-visible {
-  outline: 2px solid var(--brand, #4f46e5);
-  outline-offset: 2px;
+.template-background-choice:focus-visible,
+.template-background-choice.active:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .template-background-choice.active {
@@ -292,9 +292,9 @@
   transform: translateY(-1px);
   border-color: #bec7ee;
 }
-.invoice-template-option:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+.invoice-template-option:focus-visible,
+.invoice-template-option.selected:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 .invoice-template-option.selected {
   background: #fafbff;
@@ -628,8 +628,7 @@
 }
 
 .template-library-list > button:focus-visible {
-  outline: 2px solid var(--brand, #4f46e5);
-  outline-offset: 1px;
+  box-shadow: var(--focus-ring);
 }
 
 .template-library-thumb {
