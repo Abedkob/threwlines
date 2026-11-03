@@ -38,6 +38,17 @@ export async function queryCount(
   return Number(value ?? 0);
 }
 
+// pg serializes JS arrays as Postgres array literals, so objects and arrays
+// are sent as JSON strings for jsonb parameters. Dates and Buffers pass through.
+function serializeParam(value: unknown): unknown {
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (value !== null && typeof value === "object") {
+    const proto = Object.getPrototypeOf(value);
+    if (proto === Object.prototype || proto === null) return JSON.stringify(value);
+  }
+  return value;
+}
+
 // Calls a SQL function: select fn($1, $2, ...) as result.
 export async function rpc<T = unknown>(
   fnName: string,
@@ -47,10 +58,11 @@ export async function rpc<T = unknown>(
   if (!FUNCTION_NAME.test(fnName)) {
     throw new Error(`Invalid function name: ${fnName}`);
   }
+  const params = args.map(serializeParam);
   const placeholders = args.map((_, index) => `$${index + 1}`).join(", ");
   const row = await queryOne<{ result: T }>(
     `select ${fnName}(${placeholders}) as result`,
-    args,
+    params,
     db
   );
   return (row?.result ?? null) as T;

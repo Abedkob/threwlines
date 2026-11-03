@@ -65,6 +65,21 @@ describe("query helpers", () => {
     assert.equal(calls[0].sql, "select navigation_counts() as result");
   });
 
+  it("rpc JSON-serializes object and array params and passes scalars through", async () => {
+    const { pool, calls } = mockPool([{ result: "id-1" }]);
+    const invoice = { contact_id: "c1", discount: 0 };
+    const items = [{ description: "x", quantity: 1 }];
+    await rpc("create_invoice", ["actor-1", invoice, items, null, true, 7], pool);
+    assert.deepEqual(calls[0].params, [
+      "actor-1",
+      JSON.stringify(invoice),
+      JSON.stringify(items),
+      null,
+      true,
+      7
+    ]);
+  });
+
   it("rpc rejects unsafe function names", async () => {
     const { pool } = mockPool([]);
     await assert.rejects(() => rpc("x; drop table t", [], pool), /Invalid function name/);
