@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
 
 const titles: Record<string, { title: string; description: string; section: string }> = {
   "/dashboard": { title: "Dashboard", description: "The team's pulse, at a glance.", section: "Workspace" },
@@ -31,10 +30,6 @@ export function TopBar() {
         <p className="eyebrow">{content.section} <i /> ThrewLines</p>
         <h1>{content.title}</h1>
         <p>{content.description}</p>
-      </div>
-      <div className="topbar-status" title="Authenticated private workspace">
-        <span className="topbar-status-icon"><ShieldCheck size={14} /><i /></span>
-        <span><strong>Private workspace</strong><small>Team data connected</small></span>
       </div>
     </header>
   );

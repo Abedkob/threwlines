@@ -64,11 +64,6 @@ export default function LoginPage() {
             <small>Internal operations</small>
           </span>
         </div>
-
-        <div className="login-system-status">
-          <i aria-hidden="true" />
-          <span><strong>Private workspace</strong><small>Authorized access only</small></span>
-        </div>
       </header>
 
       <div className="login-stage">
