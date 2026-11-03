@@ -193,3 +193,33 @@ test("a focus-visible rule never draws a second, competing indicator", () => {
     }
   }
 });
+
+// Utilities such as bg-primary generate from this block, so its names are the house vocabulary.
+const themeBlock = (): string =>
+  readFileSync("app/globals.css", "utf8").match(/@theme\b[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+test("every token is exposed to Tailwind as a theme color", () => {
+  const theme = themeBlock();
+  for (const name of Object.keys(TOKENS)) {
+    assert.match(theme, new RegExp(`--color-${name}:\\s*var\\(--${name}\\)`), `--color-${name} not in @theme`);
+  }
+});
+
+test("the theme block holds exactly the four-size type scale and no hex literals", () => {
+  const theme = themeBlock();
+  const sizes = [...theme.matchAll(/--text-([a-z]+):\s*([^;]+);/g)].map(([, n, v]) => `${n}=${v.trim()}`);
+  assert.deepEqual(sizes, ["xs=0.75rem", "sm=0.8125rem", "base=0.9375rem", "lg=1.25rem"]);
+  assert.deepEqual(
+    [...theme.matchAll(/--text-([\w-]+)--line-height:\s*([^;]+);/g)].map(([, n, v]) => `${n}=${v.trim()}`),
+    ["xs=1rem", "sm=1.25rem", "base=1.5rem", "lg=1.75rem"],
+  );
+  assert.equal((theme.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).length, 0);
+  assert.doesNotMatch(theme, /--spacing/);
+});
+
+test("the shell geometry tokens stay declared", () => {
+  const css = readFileSync("app/globals.css", "utf8");
+  assert.match(css, /--sidebar-width:\s*248px;/);
+  assert.match(css, /--sidebar-compact-width:\s*82px;/);
+  assert.match(css, /--mobile-nav-height:\s*72px;/);
+});

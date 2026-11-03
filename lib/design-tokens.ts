@@ -100,6 +100,6 @@ function stripBlocks(css: string, selector: RegExp): string {
 
 // Counts hex color literals outside :root and @theme blocks.
 export function countLegacyHex(css: string): number {
-  const stripped = stripBlocks(stripBlocks(css, /:root\s*\{/), /@theme\s*\{/);
+  const stripped = stripBlocks(stripBlocks(css, /:root\s*\{/), /@theme\b[^{]*\{/);
   return (stripped.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).length;
 }

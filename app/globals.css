@@ -88,6 +88,50 @@
   --focus-ring-dark: 0 0 0 2px var(--ink), 0 0 0 4px var(--surface);
 }
 
+/* Projects the :root tokens above into Tailwind so bg-primary, text-danger, border-line and
+   bg-ramp-1..6 generate from the same values the legacy CSS uses. `inline` makes utilities
+   emit var(--primary) directly instead of going through a second --color-primary variable.
+   Spacing is deliberately not aliased: Tailwind's 0.25rem base already puts p-2 at 8px and p-6
+   at 24px, which is the 8px grid, so there is one spacing vocabulary and not two.
+
+   WARNING: the type scale below overrides stock Tailwind. text-sm is 13px / 20px here, not
+   14px, because the product is read at 13px in dense tables. Only these four sizes exist;
+   text-xl and larger do not. Sizes and line-heights follow the design direction's Type section. */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-wash: var(--primary-wash);
+  --color-accent-line: var(--accent-line);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-success-fill: var(--success-fill);
+  --color-warning-fill: var(--warning-fill);
+  --color-danger-fill: var(--danger-fill);
+  --color-ramp-1: var(--ramp-1);
+  --color-ramp-2: var(--ramp-2);
+  --color-ramp-3: var(--ramp-3);
+  --color-ramp-4: var(--ramp-4);
+  --color-ramp-5: var(--ramp-5);
+  --color-ramp-6: var(--ramp-6);
+
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+}
+
 /* Moved out of the legacy sheet with the tokens above: layered beneath an unlayered base it
    could never win. Same 72px as the base today, so this is a no-op until the values diverge. */
 @media (max-width: 820px) {
