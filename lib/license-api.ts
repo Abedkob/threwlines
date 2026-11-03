@@ -142,9 +142,25 @@ export function requiredLicenseKey(value: unknown): string {
 
 export async function rateLimit(req: Request, operation: string, limit: number) {
   const ip = clientIp(req);
+  // When the client IP is not trustable (no trusted-proxy header, no socket
+  // address available), fall back to a shared "unknown" bucket keyed by the
+  // operation. All untrusted callers compete for the same quota — not ideal
+  // for legitimate traffic from behind untrusted hops, but it closes the
+  // bypass where omitting X-Forwarded-For would otherwise mean no limit at
+  // all. The previous `${operation}:unknown:${randomUUID()}` keying meant one
+  // bucket per request.
   const identity = ip === "unknown"
-    ? `${operation}:unknown:${req.headers.get("x-request-id") ?? crypto.randomUUID()}`
+    ? `${operation}:unknown`
     : `${operation}:${await hash(ip)}`;
+  return Boolean(await rpc("license_rate_limit_hit", [identity, limit, 60]));
+}
+
+// Second rate-limit axis keyed on the license key itself, so a single key
+// cannot be brute-forced from many IPs. Call alongside rateLimit() on the
+// activate endpoint. 60 attempts per license key per 60s is generous for
+// legitimate retries and tight on guessing.
+export async function rateLimitByLicenseKey(licenseKey: string, operation: string, limit: number) {
+  const identity = `${operation}:key:${await hash(licenseKey)}`;
   return Boolean(await rpc("license_rate_limit_hit", [identity, limit, 60]));
 }
 
