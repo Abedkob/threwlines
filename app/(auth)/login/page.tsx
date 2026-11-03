@@ -13,12 +13,9 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DocumentWave } from "@/components/billing/shared/DocumentWave";
-import { createClient } from "@/lib/supabase/client";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
 
 export default function LoginPage() {
   const router = useRouter();
-  const configured = hasSupabaseConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -27,16 +24,25 @@ export default function LoginPage() {
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!configured || loading) return;
+    if (loading) return;
 
     setError("");
     setLoading(true);
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError) {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      if (!response.ok || !result?.ok) {
+        setLoading(false);
+        setError(result?.message ?? "Unable to sign in.");
+        return;
+      }
+    } catch {
       setLoading(false);
-      setError(signInError.message);
+      setError("Unable to reach the server.");
       return;
     }
 
@@ -94,13 +100,6 @@ export default function LoginPage() {
 
             <p className="form-intro">Use the credentials assigned to this shared workspace.</p>
 
-            {!configured && (
-              <div className="login-notice" role="status">
-                <CircleAlert size={16} />
-                <span>Add the Supabase URL and anonymous key to <code>.env.local</code> before signing in.</span>
-              </div>
-            )}
-
             <div className="login-fields">
               <label className="login-field">
                 <span>Email address</span>
@@ -150,7 +149,7 @@ export default function LoginPage() {
             <button
               className="login-submit"
               type="submit"
-              disabled={loading || !configured}
+              disabled={loading}
             >
               <span>{loading ? "Opening workspace" : "Enter workspace"}<small>{loading ? "Validating secure session" : "Continue to your dashboard"}</small></span>
               {loading ? <LoaderCircle className="login-spinner" size={18} /> : <ArrowUpRight size={18} />}
@@ -158,7 +157,7 @@ export default function LoginPage() {
 
             <footer className="login-form-footer">
               <span><ShieldCheck size={14} /> Protected session</span>
-              <span>Supabase Auth</span>
+              <span>Secure session</span>
             </footer>
           </form>
         </section>
