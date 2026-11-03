@@ -103,7 +103,7 @@ function ChecklistItem({
     <div className={item.parent_id ? "ml-5 border-l border-line pl-3" : ""}>
       <div className="group flex min-h-8 items-center gap-2 border-b border-line py-1 last:border-b-0">
         <button
-          className={`grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors ${
+          className={`inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border p-0 leading-none transition-colors ${
             item.done
               ? "border-success bg-success text-surface"
               : "border-line bg-surface hover:border-primary"
@@ -119,7 +119,7 @@ function ChecklistItem({
           disabled={busy}
           aria-label={`${item.done ? "Reopen" : "Complete"} ${item.content}`}
         >
-          {item.done ? <Check size={11} strokeWidth={3} /> : null}
+          {item.done ? <Check size={10} strokeWidth={3} aria-hidden="true" /> : null}
         </button>
         {editing ? (
           <form className="flex min-w-0 flex-1 items-center gap-1" onSubmit={save}>

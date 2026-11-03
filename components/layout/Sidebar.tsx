@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LockKeyhole,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -67,12 +66,6 @@ export function Sidebar({
           {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
         </button>
         <button className="sidebar-close" onClick={onClose} aria-label="Close navigation"><X size={19} /></button>
-      </div>
-
-      <div className="workspace-status" title={collapsed ? "Private workspace · 3 seats" : undefined}>
-        <span className="workspace-status-icon"><LockKeyhole size={14} /><i /></span>
-        <span className="workspace-status-copy"><strong>Private workspace</strong><small>Encrypted team vault</small></span>
-        <span className="workspace-seat-count">03</span>
       </div>
 
       <nav className="sidebar-nav" aria-label="Primary navigation">
