@@ -28,3 +28,27 @@ test("status text colors meet WCAG AA on light surfaces", () => {
     assert.ok(ratio >= 4.5, `${fg} on ${bg} is ${ratio.toFixed(2)}:1`);
   }
 });
+
+test("status and license pills meet WCAG AA text contrast", () => {
+  const rule = /(?<=^|[}\s,])(\.(?:status|license-state)-[a-z_]+)\s*\{([^{}]*)\}/g;
+  const pairs = new Map<string, [string, string]>();
+  for (const file of ["globals", "licensing"]) {
+    const css = readFileSync(`app/${file}.css`, "utf8");
+    for (const match of css.matchAll(rule)) {
+      const color = /(?:^|[;\s])color\s*:\s*(#[0-9a-f]{3,6})\b/i.exec(match[2]);
+      const background = /(?:^|[;\s])background\s*:\s*(#[0-9a-f]{3,6})\b/i.exec(match[2]);
+      if (color && background) {
+        pairs.set(match[1], [color[1], background[1]]);
+      }
+    }
+  }
+  assert.ok(pairs.size >= 9, `only parsed ${pairs.size} pill color pairs`);
+  const failures: string[] = [];
+  for (const [selector, [fg, bg]] of pairs) {
+    const ratio = contrastRatio(fg, bg);
+    if (ratio < 4.5) {
+      failures.push(`${selector} ${fg} on ${bg} is ${ratio.toFixed(2)}:1`);
+    }
+  }
+  assert.deepEqual(failures, []);
+});
