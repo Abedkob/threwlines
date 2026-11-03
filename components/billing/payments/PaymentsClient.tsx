@@ -20,16 +20,10 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import {
-  listInvoicePaymentRecords,
-  listPaymentInvoices,
-  recordInvoicePayment,
-} from "@/lib/billing";
-import { getCurrentUserRole } from "@/lib/db";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { fmtDay, initials, money } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
 import type {
-  AppRole,
   Invoice,
   InvoicePaymentMethod,
   InvoicePaymentRecord,
@@ -53,7 +47,7 @@ function customerName(record: InvoicePaymentRecord) {
 export function PaymentsClient() {
   const [records, setRecords] = useState<InvoicePaymentRecord[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [role, setRole] = useState<AppRole>("member");
+  const role = useAuth().user.role;
   const [query, setQuery] = useState("");
   const [customerFilter, setCustomerFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");
@@ -66,13 +60,8 @@ export function PaymentsClient() {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const supabase = createClient();
-      const [paymentRows, currentRole] = await Promise.all([
-        listInvoicePaymentRecords(supabase),
-        getCurrentUserRole(supabase),
-      ]);
+      const paymentRows = await apiFetch<InvoicePaymentRecord[]>("/api/billing/payment-records");
       setRecords(paymentRows);
-      setRole(currentRole);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Payment records could not load.");
     } finally {
@@ -135,7 +124,7 @@ export function PaymentsClient() {
     setMessage("");
     try {
       if (!invoiceOptionsReady) {
-        setInvoices(await listPaymentInvoices(createClient()));
+        setInvoices(await apiFetch<Invoice[]>("/api/billing/payment-invoices"));
         setInvoiceOptionsReady(true);
       }
       setPayment(emptyPayment);
@@ -169,13 +158,15 @@ export function PaymentsClient() {
     if (amount > invoice.balance_due) return setMessage("Payment exceeds the invoice balance.");
     setBusy(true);
     try {
-      await recordInvoicePayment(createClient(), {
-        invoiceId: invoice.id,
-        amount,
-        method: payment.method,
-        paidOn: payment.paidOn,
-        transactionReference: payment.reference,
-        notes: payment.notes,
+      await apiFetch(`/api/billing/invoices/${invoice.id}/payments`, {
+        method: "POST",
+        ...jsonBody({
+          amount,
+          method: payment.method,
+          paidOn: payment.paidOn,
+          transactionReference: payment.reference,
+          notes: payment.notes,
+        }),
       });
       setOpen(false);
       setInvoiceOptionsReady(false);

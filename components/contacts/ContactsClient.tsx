@@ -16,14 +16,9 @@ import { BulkContactsModal } from "@/components/contacts/BulkContactsModal";
 import { HeatChip } from "@/components/contacts/HeatChip";
 import { NewContactModal } from "@/components/contacts/NewContactModal";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  getContact,
-  listContactsPage,
-  listProfiles,
-} from "@/lib/db";
+import { apiFetch, buildQuery } from "@/lib/api/client";
 import { initials } from "@/lib/format";
 import { contactHeat } from "@/lib/heat";
-import { createClient } from "@/lib/supabase/client";
 import type { Contact, PagedResult, Profile } from "@/types/db";
 
 type Filter = "all" | "leads" | "customers";
@@ -85,12 +80,9 @@ export function ContactsClient() {
     setFetching(true);
     setError("");
     try {
-      const data = await listContactsPage(createClient(), {
-        page,
-        pageSize,
-        query,
-        filter,
-      });
+      const data = await apiFetch<PagedResult<Contact>>(
+        `/api/contacts${buildQuery({ page, pageSize, query, filter })}`,
+      );
       setResult(data);
       if (page > data.totalPages) replaceParams({ page: data.totalPages });
     } catch (caught) {
@@ -109,8 +101,7 @@ export function ContactsClient() {
     void loadPage();
   }, [loadPage]);
   useEffect(() => {
-    const supabase = createClient();
-    void listProfiles(supabase)
+    void apiFetch<Profile[]>("/api/profiles")
       .then((profileData) => {
         setProfiles(profileData);
       })
@@ -132,7 +123,7 @@ export function ContactsClient() {
   }, [query, replaceParams, searchDraft]);
 
   async function refreshContact(id: string) {
-    const updated = await getContact(createClient(), id);
+    const updated = await apiFetch<Contact>(`/api/contacts/${id}`);
     setSelected(updated);
     await loadPage();
   }
@@ -140,7 +131,7 @@ export function ContactsClient() {
     setNewOpen(false);
     replaceParams({ page: 1 });
     await loadPage();
-    setSelected(await getContact(createClient(), id));
+    setSelected(await apiFetch<Contact>(`/api/contacts/${id}`));
   }
   async function bulkImported() {
     replaceParams({ page: 1 });

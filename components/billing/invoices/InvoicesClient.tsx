@@ -21,12 +21,10 @@ import {
   customerBillingValue,
   type CustomerBillingValue,
 } from "@/components/billing/shared/CustomerBillingProfile";
-import { createInvoice, generateMonthlyInvoices, listInvoicesPage, listTemplates } from "@/lib/billing";
 import { calculateTotals, validateInvoice } from "@/lib/billing-validation";
 import { syncCustomerBilling } from "@/lib/customer-billing";
-import { listContactsPage, listServices } from "@/lib/db";
+import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
 import { fmtDay, money } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
 import type { BillingLineInput, Contact, DocumentTemplate, Invoice, PagedResult, Service } from "@/types/db";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -85,8 +83,9 @@ export function InvoicesClient() {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const supabase = createClient();
-      const invoicePage = await listInvoicesPage(supabase, { status, page, pageSize });
+      const invoicePage = await apiFetch<PagedResult<Invoice>>(
+        `/api/billing/invoices${buildQuery({ status, page, pageSize })}`,
+      );
       setResult(invoicePage);
       setRows(invoicePage.rows);
     } catch (error) {
@@ -118,11 +117,10 @@ export function InvoicesClient() {
     try {
       let availableTemplates = templates;
       if (!editorReady) {
-        const supabase = createClient();
         const [contactPage, serviceRows, templateRows] = await Promise.all([
-          listContactsPage(supabase, { page: 1, pageSize: 100, filter: "customers" }),
-          listServices(supabase),
-          listTemplates(supabase),
+          apiFetch<PagedResult<Contact>>("/api/contacts?page=1&pageSize=100&filter=customers"),
+          apiFetch<Service[]>("/api/services"),
+          apiFetch<DocumentTemplate[]>("/api/billing/templates"),
         ]);
         availableTemplates = templateRows.filter((template) => template.document_type === "invoice");
         setContacts(contactPage.rows);
@@ -149,9 +147,11 @@ export function InvoicesClient() {
     if (issue) return setMessage(issue);
     setBusy(true);
     try {
-      const supabase = createClient();
-      await syncCustomerBilling(supabase, form.contact_id, billing);
-      const id = await createInvoice(supabase, form, items);
+      await syncCustomerBilling(form.contact_id, billing);
+      const { id } = await apiFetch<{ id: string }>("/api/billing/invoices", {
+        method: "POST",
+        ...jsonBody({ invoice: form, items }),
+      });
       setOpen(false);
       window.location.href = `/invoices/${id}`;
     } catch (error) {
@@ -164,7 +164,10 @@ export function InvoicesClient() {
     setBusy(true);
     setMessage("");
     try {
-      const report = await generateMonthlyInvoices(createClient(), `${today.slice(0, 8)}01`);
+      const report = await apiFetch<{ created: unknown[]; skipped: unknown[]; errors: unknown[] }>(
+        "/api/billing/invoices/generate",
+        { method: "POST", ...jsonBody({ month: `${today.slice(0, 8)}01` }) },
+      );
       setMessage(`${report.created.length} created · ${report.skipped.length} skipped · ${report.errors.length} errors`);
       await load();
     } catch (error) {

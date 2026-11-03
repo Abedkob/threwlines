@@ -19,16 +19,7 @@ import {
 import { NewTaskModal } from "@/components/tasks/NewTaskModal";
 import { TaskDeleteDialog } from "@/components/tasks/TaskDeleteDialog";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  addTaskItem,
-  deleteTask,
-  deleteTaskItem,
-  listProfiles,
-  listTasksPage,
-  updateTask,
-  updateTaskItem,
-} from "@/lib/db";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
 import { fmtDay, initials } from "@/lib/format";
 import type {
   Profile,
@@ -78,14 +69,17 @@ function ChecklistItem({
   }
   const childCount = children ? Children.count(children) : 0;
   async function remove() {
-    const removed = await run(() => deleteTaskItem(createClient(), item.id));
+    const removed = await run(() => apiFetch(`/api/tasks/${item.task_id}/items/${item.id}`, { method: "DELETE" }));
     if (removed) setDeleting(false);
   }
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!content.trim()) return;
     await run(() =>
-      updateTaskItem(createClient(), item.id, { content: content.trim() }),
+      apiFetch(`/api/tasks/${item.task_id}/items/${item.id}`, {
+        method: "PATCH",
+        ...jsonBody({ content: content.trim() }),
+      }),
     );
     setEditing(false);
   }
@@ -93,13 +87,10 @@ function ChecklistItem({
     event.preventDefault();
     if (!childContent.trim()) return;
     await run(() =>
-      addTaskItem(
-        createClient(),
-        item.task_id,
-        childContent.trim(),
-        item.id,
-        0,
-      ),
+      apiFetch(`/api/tasks/${item.task_id}/items`, {
+        method: "POST",
+        ...jsonBody({ content: childContent.trim(), parent_id: item.id, sort_order: 0 }),
+      }),
     );
     setChildContent("");
     setAddingChild(false);
@@ -111,7 +102,10 @@ function ChecklistItem({
           className={`check-button ${item.done ? "checked" : ""}`}
           onClick={() =>
             run(() =>
-              updateTaskItem(createClient(), item.id, { done: !item.done }),
+              apiFetch(`/api/tasks/${item.task_id}/items/${item.id}`, {
+                method: "PATCH",
+                ...jsonBody({ done: !item.done }),
+              }),
             )
           }
           disabled={busy}
@@ -227,7 +221,7 @@ function TaskCard({
     }
   }
   async function removeTask() {
-    const removed = await run(() => deleteTask(createClient(), task.id), false);
+    const removed = await run(() => apiFetch(`/api/tasks/${task.id}`, { method: "DELETE" }), false);
     if (!removed) return;
     setDeleting(false);
     await onDeleted();
@@ -235,11 +229,14 @@ function TaskCard({
   async function saveTask(event: FormEvent) {
     event.preventDefault();
     await run(() =>
-      updateTask(createClient(), task.id, {
-        title: title.trim(),
-        assigned_to: assignee || null,
-        priority,
-        due_date: dueDate || null,
+      apiFetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        ...jsonBody({
+          title: title.trim(),
+          assigned_to: assignee || null,
+          priority,
+          due_date: dueDate || null,
+        }),
       }),
     );
     setEditing(false);
@@ -248,7 +245,10 @@ function TaskCard({
     event.preventDefault();
     if (!newItem.trim()) return;
     await run(() =>
-      addTaskItem(createClient(), task.id, newItem.trim(), null, roots.length),
+      apiFetch(`/api/tasks/${task.id}/items`, {
+        method: "POST",
+        ...jsonBody({ content: newItem.trim(), parent_id: null, sort_order: roots.length }),
+      }),
     );
     setNewItem("");
   }
@@ -261,8 +261,9 @@ function TaskCard({
           className={`task-status-button ${task.status === "done" ? "done" : ""}`}
           onClick={() =>
             run(() =>
-              updateTask(createClient(), task.id, {
-                status: task.status === "done" ? "open" : "done",
+              apiFetch(`/api/tasks/${task.id}`, {
+                method: "PATCH",
+                ...jsonBody({ status: task.status === "done" ? "open" : "done" }),
               }),
             )
           }
@@ -455,14 +456,15 @@ export function TasksClient() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const supabase = createClient();
       const [taskData, profileData] = await Promise.all([
-        listTasksPage(supabase, {
-          page: requestedPage,
-          pageSize: requestedPageSize,
-          status: view,
-        }),
-        listProfiles(supabase),
+        apiFetch<PagedResult<Task>>(
+          `/api/tasks${buildQuery({
+            page: requestedPage,
+            pageSize: requestedPageSize,
+            status: view,
+          })}`,
+        ),
+        apiFetch<Profile[]>("/api/profiles"),
       ]);
       setResult(taskData);
       setProfiles(profileData);

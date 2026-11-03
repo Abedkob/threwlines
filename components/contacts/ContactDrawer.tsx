@@ -19,16 +19,8 @@ import {
   LoaderCircle,
   X,
 } from "lucide-react";
-import {
-  addActivity,
-  listContactActivities,
-  moveContact,
-  updateContact,
-} from "@/lib/db";
-import { listContactInvoiceLedger } from "@/lib/billing";
-import { listContactLicenses, maskedLicenseKey } from "@/lib/licensing";
-import { createClient } from "@/lib/supabase/client";
-import { fmtDay, initials, money } from "@/lib/format";
+import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
+import { fmtDay, initials, maskedLicenseKey, money } from "@/lib/format";
 import { HeatChip } from "@/components/contacts/HeatChip";
 import type {
   ActivityChannel,
@@ -37,6 +29,7 @@ import type {
   ContactStage,
   ContactUpdate,
   Cursor,
+  CursorResult,
   Invoice,
   License,
   Profile,
@@ -104,11 +97,10 @@ export function ContactDrawer({
   const loadFeeds = useCallback(async () => {
     setLoadingFeed(true);
     try {
-      const supabase = createClient();
       const [activityPage, invoiceRows, licenseRows] = await Promise.all([
-        listContactActivities(supabase, contact.id),
-        listContactInvoiceLedger(supabase, contact.id),
-        listContactLicenses(supabase, contact.id),
+        apiFetch<CursorResult<Activity>>(`/api/contacts/${contact.id}/activities`),
+        apiFetch<Invoice[]>(`/api/contacts/${contact.id}/invoices`),
+        apiFetch<License[]>(`/api/contacts/${contact.id}/licenses`),
       ]);
       setActivities(activityPage.rows);
       setActivityCursor(activityPage.nextCursor);
@@ -188,10 +180,11 @@ export function ContactDrawer({
     if (!activityCursor) return;
     setLoadingMore(true);
     try {
-      const next = await listContactActivities(
-        createClient(),
-        contact.id,
-        activityCursor,
+      const next = await apiFetch<CursorResult<Activity>>(
+        `/api/contacts/${contact.id}/activities${buildQuery({
+          cursor_created_at: activityCursor.createdAt,
+          cursor_id: activityCursor.id,
+        })}`,
       );
       setActivities((current) => [...current, ...next.rows]);
       setActivityCursor(next.nextCursor);
@@ -208,7 +201,7 @@ export function ContactDrawer({
   async function saveDetails(event: FormEvent) {
     event.preventDefault();
     await run(() =>
-      updateContact(createClient(), contact.id, {
+      apiFetch(`/api/contacts/${contact.id}`, { method: "PATCH", ...jsonBody({
         ...draft,
         name: draft.name?.trim(),
         instagram: draft.instagram?.trim() || null,
@@ -219,23 +212,21 @@ export function ContactDrawer({
         billing_contact: draft.billing_contact?.trim() || null,
         billing_address: draft.billing_address?.trim() || null,
         notes: draft.notes?.trim() || null,
-      }),
+      }) }),
     );
   }
   async function changeStage(stage: ContactStage) {
     if (stage === contact.stage) return;
-    await run(() => moveContact(createClient(), contact, stage));
+    await run(() => apiFetch(`/api/contacts/${contact.id}/move`, { method: "POST", ...jsonBody({ stage }) }));
   }
   async function logActivity(event: FormEvent) {
     event.preventDefault();
     if (!activityNote.trim()) return;
     await run(async () => {
-      await addActivity(
-        createClient(),
-        contact.id,
-        channel,
-        activityNote.trim(),
-      );
+      await apiFetch(`/api/contacts/${contact.id}/activities`, {
+        method: "POST",
+        ...jsonBody({ channel, note: activityNote.trim() }),
+      });
       setActivityNote("");
     });
   }

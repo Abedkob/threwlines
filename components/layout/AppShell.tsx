@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
-import { getNavigationCounts } from "@/lib/db";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
+import type { NavigationCounts } from "@/types/db";
 
 const SIDEBAR_PREFERENCE = "idevelopit-vault:sidebar-collapsed";
 
@@ -50,7 +50,7 @@ export function AppShell({
     let active = true;
     async function refreshBadges() {
       try {
-        const counts = await getNavigationCounts(createClient());
+        const counts = await apiFetch<NavigationCounts>("/api/navigation");
         if (active) setBadges({ contacts: counts.stale_contacts, tasks: counts.open_tasks });
       } catch {
         // Individual pages surface connection failures with actionable context.

@@ -23,20 +23,10 @@ import {
 } from "lucide-react";
 import { InvoiceAdminEditor } from "@/components/billing/invoices/InvoiceAdminEditor";
 import { InvoiceDocument } from "@/components/billing/invoices/InvoiceDocument";
-import {
-  cancelInvoice,
-  deleteInvoice,
-  finalizeInvoice,
-  getAppSettings,
-  getInvoice,
-  recordInvoicePayment,
-  signedAssetUrl,
-} from "@/lib/billing";
-import { getCurrentUserRole } from "@/lib/db";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
 import { money } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
 import type {
-  AppRole,
   AppSettings,
   Invoice,
   InvoicePaymentMethod,
@@ -46,7 +36,7 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
   const router = useRouter();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [role, setRole] = useState<AppRole>("member");
+  const role = useAuth().user.role;
   const [assets, setAssets] = useState({ logo: null as string | null, stamp: null as string | null });
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState("");
@@ -65,21 +55,17 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
   const load = useCallback(async () => {
     setBusy(true);
     try {
-      const supabase = createClient();
-      const [row, company, currentRole] = await Promise.all([
-        getInvoice(supabase, id),
-        getAppSettings(supabase),
-        getCurrentUserRole(supabase),
+      const [row, company] = await Promise.all([
+        apiFetch<Invoice>(`/api/billing/invoices/${id}`),
+        apiFetch<AppSettings | null>("/api/billing/settings"),
       ]);
       setInvoice(row);
       setSettings(company);
-      setRole(currentRole);
-      const snapshot = row.company_snapshot as Record<string, string>;
-      const [logo, stamp] = await Promise.all([
-        signedAssetUrl(supabase, row.finalized_at ? snapshot.logoUrl : company.logo_url),
-        signedAssetUrl(supabase, row.finalized_at ? snapshot.stampUrl : company.stamp_url),
-      ]);
-      setAssets({ logo, stamp });
+      const snapshot = (row.company_snapshot ?? {}) as Record<string, string>;
+      setAssets({
+        logo: assetUrl(row.finalized_at ? snapshot.logoUrl : company?.logo_url),
+        stamp: assetUrl(row.finalized_at ? snapshot.stampUrl : company?.stamp_url),
+      });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Invoice could not load.");
     } finally {
@@ -104,7 +90,7 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
   async function finalize() {
     setBusy(true);
     try {
-      await finalizeInvoice(createClient(), id);
+      await apiFetch(`/api/billing/invoices/${id}/finalize`, { method: "POST" });
       setMessage("Invoice finalized. Company, client and template details are frozen.");
       await load();
     } catch (error) {
@@ -117,7 +103,7 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
     if (!window.confirm(`Cancel ${invoice?.invoice_number}? This keeps the record and prevents new payments.`)) return;
     setBusy(true);
     try {
-      await cancelInvoice(createClient(), id);
+      await apiFetch(`/api/billing/invoices/${id}/cancel`, { method: "POST" });
       setMessage("Invoice cancelled.");
       await load();
     } catch (error) {
@@ -130,7 +116,7 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
     if (!invoice || deleteConfirmation !== invoice.invoice_number) return;
     setBusy(true);
     try {
-      await deleteInvoice(createClient(), invoice.id);
+      await apiFetch(`/api/billing/invoices/${invoice.id}`, { method: "DELETE" });
       router.replace("/invoices");
       router.refresh();
     } catch (error) {
@@ -148,13 +134,15 @@ export function InvoiceDetailsClient({ id }: { id: string }) {
     if (amount > invoice.balance_due) return setMessage("Payment exceeds the remaining balance.");
     setBusy(true);
     try {
-      await recordInvoicePayment(createClient(), {
-        invoiceId: id,
-        amount,
-        method: payment.method,
-        paidOn: payment.paidOn,
-        transactionReference: payment.reference,
-        notes: payment.notes,
+      await apiFetch(`/api/billing/invoices/${id}/payments`, {
+        method: "POST",
+        ...jsonBody({
+          amount,
+          method: payment.method,
+          paidOn: payment.paidOn,
+          transactionReference: payment.reference,
+          notes: payment.notes,
+        }),
       });
       setPayment({ ...payment, amount: "", reference: "", notes: "" });
       setMessage("Payment recorded.");

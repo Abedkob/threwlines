@@ -11,23 +11,15 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import {
-  createExpense,
-  getCurrentUserRole,
-  getExpenseSummary,
-  listExpenseCategories,
-  listExpensesPage,
-  listProfiles,
-} from "@/lib/db";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { apiFetch, buildQuery, jsonBody } from "@/lib/api/client";
 import { Pagination } from "@/components/ui/Pagination";
 import { EditExpenseModal } from "@/components/expenses/EditExpenseModal";
-import { createClient } from "@/lib/supabase/client";
 import { fmtDay, initials, money } from "@/lib/format";
 import type {
   Expense,
   ExpenseCategory,
   ExpenseSummary,
-  AppRole,
   PagedResult,
   Profile,
 } from "@/types/db";
@@ -56,7 +48,7 @@ export function ExpensesClient() {
   });
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [role, setRole] = useState<AppRole>("member");
+  const role = useAuth().user.role;
   const [editing, setEditing] = useState<Expense | null>(null);
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -70,23 +62,22 @@ export function ExpensesClient() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const supabase = createClient();
-      const [expenseData, summaryData, categoryData, profileData, currentRole] =
+      const [expenseData, summaryData, categoryData, profileData] =
         await Promise.all([
-          listExpensesPage(supabase, {
-            page: requestedPage,
-            pageSize: requestedPageSize,
-          }),
-          getExpenseSummary(supabase),
-          listExpenseCategories(supabase),
-          listProfiles(supabase),
-          getCurrentUserRole(supabase),
+          apiFetch<PagedResult<Expense>>(
+            `/api/expenses${buildQuery({
+              page: requestedPage,
+              pageSize: requestedPageSize,
+            })}`,
+          ),
+          apiFetch<ExpenseSummary>("/api/expenses/summary"),
+          apiFetch<ExpenseCategory[]>("/api/expenses/categories"),
+          apiFetch<Profile[]>("/api/profiles"),
         ]);
       setResult(expenseData);
       setSummary(summaryData);
       setCategories(categoryData);
       setProfiles(profileData);
-      setRole(currentRole);
       setCategoryId((current) => current || categoryData[0]?.id || "");
       setPaidBy((current) => current || profileData[0]?.id || "");
     } catch (caught) {
@@ -129,12 +120,15 @@ export function ExpensesClient() {
     setSaving(true);
     setError("");
     try {
-      await createExpense(createClient(), {
-        amount: numeric,
-        category_id: categoryId,
-        description: description.trim() || null,
-        spent_on: spentOn,
-        paid_by: paidBy,
+      await apiFetch("/api/expenses", {
+        method: "POST",
+        ...jsonBody({
+          amount: numeric,
+          category_id: categoryId,
+          description: description.trim() || null,
+          spent_on: spentOn,
+          paid_by: paidBy,
+        }),
       });
       setAmount("");
       setDescription("");

@@ -21,7 +21,8 @@ import {
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ContactDrawer } from "@/components/contacts/ContactDrawer";
 import { HeatChip } from "@/components/contacts/HeatChip";
-import { getContact, listPipelineContacts, listProfiles } from "@/lib/db";
+import { apiFetch, buildQuery } from "@/lib/api/client";
+import type { PipelineResult } from "@/lib/db/contacts";
 import { initials, relDate } from "@/lib/format";
 import { contactHeat } from "@/lib/heat";
 import {
@@ -29,7 +30,6 @@ import {
   parsePipelineOwner,
   parsePipelinePage,
 } from "@/lib/pipeline";
-import { createClient } from "@/lib/supabase/client";
 import type { Contact, ContactStage, Profile } from "@/types/db";
 
 const PAGE_SIZE = 40;
@@ -130,13 +130,15 @@ export function PipelineClient() {
     setFetching(true);
     setError("");
     try {
-      const pipeline = await listPipelineContacts(createClient(), {
-        query,
-        owner,
-        activity,
-        pageSize: PAGE_SIZE,
-        pages,
-      });
+      const pipeline = await apiFetch<PipelineResult>(
+        `/api/contacts/pipeline${buildQuery({
+          query,
+          owner,
+          activity,
+          pageSize: PAGE_SIZE,
+          ...pages,
+        })}`,
+      );
       if (requestId !== loadRequest.current) return;
       setGrouped(pipeline.rows);
       setTotals(pipeline.totals);
@@ -167,7 +169,7 @@ export function PipelineClient() {
     void load();
   }, [load]);
   useEffect(() => {
-    void listProfiles(createClient())
+    void apiFetch<Profile[]>("/api/profiles")
       .then(setProfiles)
       .catch((caught) =>
         setError(
@@ -192,7 +194,7 @@ export function PipelineClient() {
   }, [mobileStage, mobileStageChosen, totals]);
 
   async function refreshContact(id: string) {
-    setSelected(await getContact(createClient(), id));
+    setSelected(await apiFetch<Contact>(`/api/contacts/${id}`));
     await load();
   }
 

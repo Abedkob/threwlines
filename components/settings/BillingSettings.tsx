@@ -2,8 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Building2, FileText, LoaderCircle, Upload, WalletCards } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { getAppSettings, saveAppSettings, signedAssetUrl, uploadCompanyAsset } from "@/lib/billing";
+import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
 import type { AppSettings } from "@/types/db";
 
 export function BillingSettings() {
@@ -14,11 +13,10 @@ export function BillingSettings() {
   useEffect(() => {
     void (async () => {
       try {
-        const supabase = createClient();
-        const settings = await getAppSettings(supabase);
+        const settings = await apiFetch<AppSettings | null>("/api/billing/settings");
+        if (!settings) throw new Error("Billing settings have not been initialised.");
         setValue(settings);
-        const [logo, stamp] = await Promise.all([signedAssetUrl(supabase, settings.logo_url), signedAssetUrl(supabase, settings.stamp_url)]);
-        setPreviews({ logo, stamp });
+        setPreviews({ logo: assetUrl(settings.logo_url), stamp: assetUrl(settings.stamp_url) });
       } catch (error) { setMessage(error instanceof Error ? error.message : "Billing settings could not load."); }
       finally { setBusy(false); }
     })();
@@ -30,11 +28,14 @@ export function BillingSettings() {
     if (!file || !value) return;
     setBusy(true); setMessage("");
     try {
-      const supabase = createClient();
-      const path = await uploadCompanyAsset(supabase, kind, file);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("kind", kind);
+      const response = await fetch("/api/billing/settings/upload", { method: "POST", body: formData });
+      const uploaded = await response.json().catch(() => ({ error: response.statusText }));
+      if (!response.ok) throw new Error(uploaded.error || response.statusText);
       const key = kind === "logo" ? "logo_url" : "stamp_url";
-      await saveAppSettings(supabase, { [key]: path });
-      set(key, path);
+      set(key, uploaded.path as string);
       setPreviews((current) => ({ ...current, [kind]: URL.createObjectURL(file) }));
       setMessage(`${kind === "logo" ? "Logo" : "Stamp"} uploaded.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Upload failed."); }
@@ -47,7 +48,7 @@ export function BillingSettings() {
     if (value.omt_enabled && (!value.omt_recipient_name?.trim() || !value.omt_phone?.trim())) return setMessage("OMT recipient and phone are required while OMT is enabled.");
     if (value.whish_enabled && (!value.whish_recipient_name?.trim() || !value.whish_phone?.trim())) return setMessage("Whish recipient and phone are required while Whish is enabled.");
     setBusy(true); setMessage("");
-    try { await saveAppSettings(createClient(), value); setMessage("Billing settings saved."); }
+    try { await apiFetch("/api/billing/settings", { method: "PATCH", ...jsonBody(value) }); setMessage("Billing settings saved."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Settings could not be saved."); }
     finally { setBusy(false); }
   }

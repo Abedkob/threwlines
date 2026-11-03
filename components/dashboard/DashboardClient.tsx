@@ -12,15 +12,8 @@ import {
 } from "lucide-react";
 import { ContactDrawer } from "@/components/contacts/ContactDrawer";
 import { HeatChip } from "@/components/contacts/HeatChip";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
 import { fmtDay, initials, money } from "@/lib/format";
-import {
-  getContact,
-  getDashboardSummary,
-  listAttentionContacts,
-  listMyOpenTasks,
-  listProfiles,
-} from "@/lib/db";
 import type {
   Contact,
   ContactStage,
@@ -60,13 +53,12 @@ export function DashboardClient() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const supabase = createClient();
       const [summaryData, attentionData, taskData, profileData] =
         await Promise.all([
-          getDashboardSummary(supabase),
-          listAttentionContacts(supabase, 5),
-          listMyOpenTasks(supabase, 5),
-          listProfiles(supabase),
+          apiFetch<DashboardSummary>("/api/dashboard"),
+          apiFetch<Contact[]>("/api/contacts/attention?limit=5"),
+          apiFetch<Task[]>("/api/tasks/mine?limit=5"),
+          apiFetch<Profile[]>("/api/profiles"),
         ]);
       setSummary(summaryData);
       setAttention(attentionData);
@@ -86,7 +78,7 @@ export function DashboardClient() {
     void load();
   }, [load]);
   async function refreshContact(id: string) {
-    setSelected(await getContact(createClient(), id));
+    setSelected(await apiFetch<Contact>(`/api/contacts/${id}`));
     await load();
   }
   function keyOpen(event: React.KeyboardEvent, contact: Contact) {

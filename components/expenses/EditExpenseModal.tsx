@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Save, Trash2, X } from "lucide-react";
-import { deleteExpense, updateExpense } from "@/lib/db";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { useDialogFocus } from "@/lib/useDialogFocus";
 import type { Expense, ExpenseCategory, Profile } from "@/types/db";
 
@@ -51,12 +50,15 @@ export function EditExpenseModal({
     setSaving(true);
     setError("");
     try {
-      await updateExpense(createClient(), expense.id, {
-        amount: numericAmount,
-        category_id: categoryId,
-        description: description.trim() || null,
-        spent_on: spentOn,
-        paid_by: paidBy,
+      await apiFetch(`/api/expenses/${expense.id}`, {
+        method: "PATCH",
+        ...jsonBody({
+          amount: numericAmount,
+          category_id: categoryId,
+          description: description.trim() || null,
+          spent_on: spentOn,
+          paid_by: paidBy,
+        }),
       });
       await onSaved();
     } catch (caught) {
@@ -77,7 +79,7 @@ export function EditExpenseModal({
     setDeleting(true);
     setError("");
     try {
-      await deleteExpense(createClient(), expense.id);
+      await apiFetch(`/api/expenses/${expense.id}`, { method: "DELETE" });
       await onDeleted();
     } catch (caught) {
       setError(

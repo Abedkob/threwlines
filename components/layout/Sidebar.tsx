@@ -13,7 +13,7 @@ import {
   navigationGroups,
   navigationItemIsActive,
 } from "@/components/layout/navigation-config";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api/client";
 
 function initials(name: string) {
   return name
@@ -45,7 +45,7 @@ export function Sidebar({
   const router = useRouter();
 
   async function signOut() {
-    await createClient().auth.signOut();
+    await apiFetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
   }

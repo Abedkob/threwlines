@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Box, X } from "lucide-react";
-import { saveLicensedProduct } from "@/lib/licensing";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import type { LicensedProduct } from "@/types/db";
 
 const initial = {
@@ -40,11 +39,14 @@ export function ProductModal({ product, onClose, onSaved }: { product?: Licensed
       if (!entitlements || Array.isArray(entitlements) || typeof entitlements !== "object") {
         throw new Error("Default entitlements must be a JSON object.");
       }
-      await saveLicensedProduct(createClient(), {
-        ...form,
-        code: form.code.trim().toLowerCase(),
-        default_entitlements: entitlements,
-      }, product?.id);
+      await apiFetch(product?.id ? `/api/licensing/products/${product.id}` : "/api/licensing/products", {
+        method: product?.id ? "PATCH" : "POST",
+        ...jsonBody({
+          ...form,
+          code: form.code.trim().toLowerCase(),
+          default_entitlements: entitlements,
+        }),
+      });
       await onSaved();
       onClose();
     } catch (caught) {

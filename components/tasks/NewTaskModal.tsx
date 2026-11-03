@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { X } from "lucide-react";
-import { createTask } from "@/lib/db";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { useDialogFocus } from "@/lib/useDialogFocus";
 import type { Profile, TaskPriority } from "@/types/db";
 
@@ -29,11 +28,14 @@ export function NewTaskModal({
     setSaving(true);
     setError("");
     try {
-      await createTask(createClient(), {
-        title: title.trim(),
-        assigned_to: assignedTo || null,
-        due_date: dueDate || null,
-        priority,
+      await apiFetch("/api/tasks", {
+        method: "POST",
+        ...jsonBody({
+          title: title.trim(),
+          assigned_to: assignedTo || null,
+          due_date: dueDate || null,
+          priority,
+        }),
       });
       await onCreated();
     } catch (caught) {

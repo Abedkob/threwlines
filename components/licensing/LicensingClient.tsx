@@ -19,12 +19,9 @@ import { ApiConnectionPanel } from "@/components/licensing/ApiConnectionPanel";
 import { LicenseDetailDrawer } from "@/components/licensing/LicenseDetailDrawer";
 import { ProductModal } from "@/components/licensing/ProductModal";
 import { Pagination } from "@/components/ui/Pagination";
-import { listPaymentInvoices } from "@/lib/billing";
-import { listContactsPage } from "@/lib/db";
-import { listLicensedProducts, listLicenses, maskedLicenseKey } from "@/lib/licensing";
-import { fmtDay, initials, relDate } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
-import type { Contact, Invoice, License, LicenseEffectiveStatus, LicensedProduct } from "@/types/db";
+import { apiFetch } from "@/lib/api/client";
+import { fmtDay, initials, maskedLicenseKey, relDate } from "@/lib/format";
+import type { Contact, Invoice, License, LicenseEffectiveStatus, LicensedProduct, PagedResult } from "@/types/db";
 
 const filters: Array<"all" | LicenseEffectiveStatus> = ["all", "active", "scheduled", "expired", "suspended", "revoked"];
 
@@ -54,10 +51,9 @@ export function LicensingClient() {
     setBusy(true);
     setMessage("");
     try {
-      const supabase = createClient();
       const [licenseRows, productRows] = await Promise.all([
-        listLicenses(supabase),
-        listLicensedProducts(supabase),
+        apiFetch<License[]>("/api/licensing/licenses"),
+        apiFetch<LicensedProduct[]>("/api/licensing/products"),
       ]);
       setLicenses(licenseRows);
       setProducts(productRows);
@@ -74,10 +70,9 @@ export function LicensingClient() {
     setMessage("");
     try {
       if (!issueReady) {
-        const supabase = createClient();
         const [contactPage, invoiceRows] = await Promise.all([
-          listContactsPage(supabase, { page: 1, pageSize: 100, filter: "customers" }),
-          listPaymentInvoices(supabase),
+          apiFetch<PagedResult<Contact>>("/api/contacts?page=1&pageSize=100&filter=customers"),
+          apiFetch<Invoice[]>("/api/billing/payment-invoices"),
         ]);
         setContacts(contactPage.rows);
         setInvoices(invoiceRows);

@@ -23,8 +23,7 @@ import {
 } from "lucide-react";
 import { TemplateBackgroundPicker } from "@/components/billing/templates/TemplateBackgroundPicker";
 import { TemplatePreview } from "@/components/billing/templates/TemplatePreview";
-import { deleteTemplate, getAppSettings, listTemplates, saveTemplate, signedAssetUrl } from "@/lib/billing";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
 import type { AppSettings, DocumentTemplate, DocumentType, TemplateConfig } from "@/types/db";
 
 const base: TemplateConfig = {
@@ -109,10 +108,9 @@ export function TemplatesClient() {
   const load = useCallback(async (selectId?: string) => {
     setBusy(true);
     try {
-      const supabase = createClient();
       const [templatesResult, settingsResult] = await Promise.allSettled([
-        listTemplates(supabase),
-        getAppSettings(supabase),
+        apiFetch<DocumentTemplate[]>("/api/billing/templates"),
+        apiFetch<AppSettings | null>("/api/billing/settings"),
       ]);
 
       if (templatesResult.status === "rejected") throw templatesResult.reason;
@@ -124,11 +122,7 @@ export function TemplatesClient() {
 
       if (settingsResult.status === "fulfilled") {
         setAppSettings(settingsResult.value);
-        try {
-          setLogoUrl(await signedAssetUrl(supabase, settingsResult.value.logo_url));
-        } catch {
-          setLogoUrl(null);
-        }
+        setLogoUrl(assetUrl(settingsResult.value?.logo_url));
       } else {
         setAppSettings(null);
         setLogoUrl(null);
@@ -151,7 +145,10 @@ export function TemplatesClient() {
   async function save(current = selected) {
     setBusy(true);
     try {
-      const id = await saveTemplate(createClient(), current, current.id || null);
+      const { id } = await apiFetch<{ id: string }>(
+        current.id ? `/api/billing/templates/${current.id}` : "/api/billing/templates",
+        { method: current.id ? "PATCH" : "POST", ...jsonBody(current) },
+      );
       setMessage("Template saved and ready to use.");
       await load(id);
     } catch (error) {
@@ -163,7 +160,7 @@ export function TemplatesClient() {
   async function remove() {
     setBusy(true);
     try {
-      await deleteTemplate(createClient(), selected);
+      await apiFetch(`/api/billing/templates/${selected.id}`, { method: "DELETE" });
       setMessage("Template deleted.");
       await load();
     } catch (error) {

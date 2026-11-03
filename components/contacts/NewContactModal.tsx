@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { createContact } from "@/lib/db";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import type { ContactInput, ContactStage, Profile } from "@/types/db";
 import { useDialogFocus } from "@/lib/useDialogFocus";
 
@@ -49,7 +48,7 @@ export function NewContactModal({
     setSaving(true);
     setError("");
     try {
-      const id = await createContact(createClient(), {
+      const { id } = await apiFetch<{ id: string }>("/api/contacts", { method: "POST", ...jsonBody({
         ...form,
         name: form.name.trim(),
         instagram: form.instagram?.trim() || null,
@@ -60,7 +59,7 @@ export function NewContactModal({
         billing_contact: form.billing_contact?.trim() || null,
         billing_address: form.billing_address?.trim() || null,
         notes: form.notes?.trim() || null,
-      });
+      }) });
       onCreated(id);
     } catch (caught) {
       setError(

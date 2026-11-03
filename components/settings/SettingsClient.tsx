@@ -2,17 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Check, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
-import {
-  createExpenseCategory,
-  createService,
-  deleteExpenseCategory,
-  deleteService,
-  listExpenseCategories,
-  listServices,
-  updateExpenseCategory,
-  updateService,
-} from "@/lib/db";
-import { createClient } from "@/lib/supabase/client";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { money } from "@/lib/format";
 import type { ExpenseCategory, Service } from "@/types/db";
 
@@ -44,12 +34,15 @@ function ServiceRow({
     }
     setBusy(true);
     try {
-      await updateService(createClient(), service.id, {
-        name,
-        default_price: numeric,
-        description: description.trim() || null,
-        default_quantity: 1,
-        active,
+      await apiFetch(`/api/services/${service.id}`, {
+        method: "PATCH",
+        ...jsonBody({
+          name,
+          default_price: numeric,
+          description: description.trim() || null,
+          default_quantity: 1,
+          active,
+        }),
       });
       setEditing(false);
       await onRefresh();
@@ -70,7 +63,7 @@ function ServiceRow({
     }
     setBusy(true);
     try {
-      await deleteService(createClient(), service.id);
+      await apiFetch(`/api/services/${service.id}`, { method: "DELETE" });
       await onRefresh();
     } catch (caught) {
       onError(
@@ -178,7 +171,10 @@ function CategoryRow({
     if (!name.trim()) return;
     setBusy(true);
     try {
-      await updateExpenseCategory(createClient(), category.id, name);
+      await apiFetch(`/api/expenses/categories/${category.id}`, {
+        method: "PATCH",
+        ...jsonBody({ name }),
+      });
       setEditing(false);
       await onRefresh();
     } catch (caught) {
@@ -198,7 +194,7 @@ function CategoryRow({
     }
     setBusy(true);
     try {
-      await deleteExpenseCategory(createClient(), category.id);
+      await apiFetch(`/api/expenses/categories/${category.id}`, { method: "DELETE" });
       await onRefresh();
     } catch (caught) {
       onError(
@@ -284,10 +280,9 @@ export function SettingsClient() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const supabase = createClient();
       const [serviceData, categoryData] = await Promise.all([
-        listServices(supabase),
-        listExpenseCategories(supabase),
+        apiFetch<Service[]>("/api/services"),
+        apiFetch<ExpenseCategory[]>("/api/expenses/categories"),
       ]);
       setServices(serviceData);
       setCategories(categoryData);
@@ -315,12 +310,15 @@ export function SettingsClient() {
     setSaving(true);
     setError("");
     try {
-      await createService(createClient(), {
-        name: serviceName,
-        default_price: price,
-        description: serviceDescription.trim() || null,
-        default_quantity: 1,
-        active: true,
+      await apiFetch("/api/services", {
+        method: "POST",
+        ...jsonBody({
+          name: serviceName,
+          default_price: price,
+          description: serviceDescription.trim() || null,
+          default_quantity: 1,
+          active: true,
+        }),
       });
       setServiceName("");
       setServicePrice("");
@@ -343,7 +341,10 @@ export function SettingsClient() {
     setSaving(true);
     setError("");
     try {
-      await createExpenseCategory(createClient(), categoryName);
+      await apiFetch("/api/expenses/categories", {
+        method: "POST",
+        ...jsonBody({ name: categoryName }),
+      });
       setCategoryName("");
       setNotice("Category added.");
       await load();

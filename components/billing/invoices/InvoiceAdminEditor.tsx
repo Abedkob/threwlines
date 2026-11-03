@@ -8,17 +8,16 @@ import {
   customerBillingValue,
   type CustomerBillingValue,
 } from "@/components/billing/shared/CustomerBillingProfile";
-import { listTemplates, updateInvoice } from "@/lib/billing";
 import { calculateTotals, validateInvoice } from "@/lib/billing-validation";
 import { syncCustomerBilling } from "@/lib/customer-billing";
-import { listContactsPage, listServices } from "@/lib/db";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { money } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
 import type {
   BillingLineInput,
   Contact,
   DocumentTemplate,
   Invoice,
+  PagedResult,
   Service,
 } from "@/types/db";
 
@@ -62,11 +61,10 @@ export function InvoiceAdminEditor({ invoice, onClose, onSaved }: Props) {
   );
 
   useEffect(() => {
-    const supabase = createClient();
     void Promise.all([
-      listServices(supabase),
-      listContactsPage(supabase, { page: 1, pageSize: 100, filter: "customers" }),
-      listTemplates(supabase),
+      apiFetch<Service[]>("/api/services"),
+      apiFetch<PagedResult<Contact>>("/api/contacts?page=1&pageSize=100&filter=customers"),
+      apiFetch<DocumentTemplate[]>("/api/billing/templates"),
     ])
       .then(([serviceRows, contactPage, templateRows]) => {
         setServices(serviceRows);
@@ -96,9 +94,11 @@ export function InvoiceAdminEditor({ invoice, onClose, onSaved }: Props) {
     }
     setBusy(true);
     try {
-      const supabase = createClient();
-      await syncCustomerBilling(supabase, form.contact_id, billing);
-      await updateInvoice(supabase, invoice.id, form, items);
+      await syncCustomerBilling(form.contact_id, billing);
+      await apiFetch(`/api/billing/invoices/${invoice.id}`, {
+        method: "PATCH",
+        ...jsonBody({ invoice: form, items }),
+      });
       await onSaved();
       onClose();
     } catch (error) {

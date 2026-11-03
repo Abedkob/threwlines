@@ -2,9 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { Check, Copy, KeyRound, ShieldCheck, X } from "lucide-react";
-import { issueLicense } from "@/lib/licensing";
+import { apiFetch, jsonBody } from "@/lib/api/client";
 import { validateEntitlementsJson, validateLicensePolicy } from "@/lib/licensing-validation";
-import { createClient } from "@/lib/supabase/client";
 import type { Contact, Invoice, IssuedLicense, LicensedProduct, LicenseType } from "@/types/db";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -62,7 +61,10 @@ export function IssueLicenseModal({ contacts, products, invoices, presetContactI
       if (issue) throw new Error(issue);
       const parsed = validateEntitlementsJson(form.entitlements);
       if (parsed.error) throw new Error(parsed.error);
-      const result = await issueLicense(createClient(), { ...form, entitlements: parsed.value });
+      const result = await apiFetch<IssuedLicense>("/api/licensing/licenses/issue", {
+        method: "POST",
+        ...jsonBody({ ...form, entitlements: parsed.value }),
+      });
       setIssued(result);
       await onIssued();
     } catch (caught) {

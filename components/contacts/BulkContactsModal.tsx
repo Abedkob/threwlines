@@ -10,8 +10,8 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { createContacts, listContactIdentities } from "@/lib/db";
+import { apiFetch, jsonBody } from "@/lib/api/client";
+import type { ContactIdentity } from "@/types/db";
 import {
   CONTACT_IMPORT_MAX_FILE_SIZE,
   type ContactImportRow,
@@ -81,7 +81,7 @@ export function BulkContactsModal({
     try {
       const [buffer, existingContacts] = await Promise.all([
         file.arrayBuffer(),
-        listContactIdentities(createClient()),
+        apiFetch<ContactIdentity[]>("/api/contacts/identities"),
       ]);
       const result = await parseContactWorkbook(buffer, profiles, existingContacts);
       setRows(result.rows);
@@ -151,7 +151,10 @@ export function BulkContactsModal({
     setSaving(true);
     setError("");
     try {
-      const ids = await createContacts(createClient(), inputs);
+      const { ids } = await apiFetch<{ ids: string[] }>("/api/contacts/bulk", {
+        method: "POST",
+        ...jsonBody({ contacts: inputs }),
+      });
       setImported(ids.length);
       await onImported(ids.length);
     } catch (caught) {

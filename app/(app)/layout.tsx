@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
-import { createClient } from "@/lib/supabase/server";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { getSession } from "@/lib/auth/session";
+import { getProfile } from "@/lib/db/profiles";
 
 export const dynamic = "force-dynamic";
 
@@ -11,28 +12,22 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!hasSupabaseConfig()) redirect("/login");
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("x-idv-auth-user");
-  const email = requestHeaders.get("x-idv-auth-email") ?? "";
-  if (!userId) redirect("/login");
-  const supabase = await createClient();
+  const session = await getSession(await cookies());
+  if (!session) redirect("/login");
+  const profile = await getProfile(session.userId);
+  if (!profile) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name,color")
-    .eq("id", userId)
-    .maybeSingle();
+  const user = {
+    id: session.userId,
+    email: session.email,
+    name: profile.name ?? (session.email ? session.email.split("@")[0] : "Team member"),
+    color: profile.color ?? "#3D5AF1",
+    role: profile.app_role === "superadmin" ? ("superadmin" as const) : ("member" as const),
+  };
 
   return (
-    <AppShell
-      user={{
-        email,
-        name: profile?.name ?? (email ? email.split("@")[0] : "Team member"),
-        color: profile?.color ?? "#3D5AF1",
-      }}
-    >
-      {children}
-    </AppShell>
+    <AuthProvider user={user}>
+      <AppShell user={user}>{children}</AppShell>
+    </AuthProvider>
   );
 }

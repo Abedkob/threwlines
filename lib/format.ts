@@ -43,3 +43,7 @@ export function initials(name: string) {
       .toUpperCase() || "?"
   );
 }
+
+export function maskedLicenseKey(license: { key_prefix: string; key_last_four: string }) {
+  return `${license.key_prefix}-•••••-•••••-${license.key_last_four}`;
+}
