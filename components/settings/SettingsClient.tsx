@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Check, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
 import { apiFetch, jsonBody } from "@/lib/api/client";
 import { money } from "@/lib/format";
@@ -395,8 +394,15 @@ export function SettingsClient() {
           </p>
         </div>
       </div>
-      <div className="settings-grid grid-cols-1 gap-3">
-        <SettingsSection title="Services" summary="The revenue catalog invoices are built from" meta={`${services.length} entries`}>
+      <div className="settings-grid">
+        <section className="surface settings-panel">
+          <header className="panel-heading">
+            <div>
+              <p className="eyebrow">Revenue catalog</p>
+              <h2>Services</h2>
+            </div>
+            <span>{services.length} entries</span>
+          </header>
           <form className="settings-add-form" onSubmit={addService}>
             <input
               value={serviceName}
@@ -436,8 +442,15 @@ export function SettingsClient() {
               />
             ))}
           </div>
-        </SettingsSection>
-        <SettingsSection title="Expense categories" summary="How spending is grouped in the ledger" meta={`${categories.length} entries`}>
+        </section>
+        <section className="surface settings-panel">
+          <header className="panel-heading">
+            <div>
+              <p className="eyebrow">Expense taxonomy</p>
+              <h2>Categories</h2>
+            </div>
+            <span>{categories.length} entries</span>
+          </header>
           <form
             className="settings-add-form category-add"
             onSubmit={addCategory}
@@ -473,7 +486,7 @@ export function SettingsClient() {
             expenses cannot be deleted; renaming updates every linked expense
             automatically.
           </p>
-        </SettingsSection>
+        </section>
       </div>
     </div>
   );
