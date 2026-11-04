@@ -1,21 +1,21 @@
-# idevelopit-vault
+# threwlines
 
 Internal CRM, work tracker, billing console, and licensing issuer for a small team. Runs against a local PostgreSQL database with its own JWT auth — no external services required at runtime.
 
 ## Local setup
 
 1. Install PostgreSQL 14 or newer and ensure the `pgcrypto` and `pg_trgm` extensions are available.
-2. Create a database (any name works; the examples below use `idevelopit_vault`):
+2. Create a database (any name works; the examples below use `threwlines`):
 
    ```bash
-   createdb idevelopit_vault
+   createdb threwlines
    ```
 
 3. Apply the consolidated schema and the seed data:
 
    ```bash
-   psql -d idevelopit_vault -f scripts/local-schema.sql
-   psql -d idevelopit_vault -f scripts/local-seed.sql
+   psql -d threwlines -f scripts/local-schema.sql
+   psql -d threwlines -f scripts/local-seed.sql
    ```
 
    `local-schema.sql` consolidates every migration the project needs: core tables, performance indexes, roles, billing, and licensing. `local-seed.sql` creates the initial superadmin profile — change the password hash before shipping to real users.
@@ -59,6 +59,6 @@ Generate asymmetric signing keys with `node scripts/generate-license-signing-key
 
 ## Authentication
 
-Sessions are signed JWTs stored in an `httpOnly`, `sameSite: lax`, `secure`-in-production cookie. The `middleware.ts` layer redirects unauthenticated traffic to `/login` and injects `x-idv-auth-user` / `x-idv-auth-email` request headers on authenticated routes. The `/api/auth/login` and `/api/auth/logout` endpoints plus the public licensing API (`/api/license/v1/*`) are the only paths exempted from the session check.
+Sessions are signed JWTs stored in an `httpOnly`, `sameSite: lax`, `secure`-in-production cookie. The `middleware.ts` layer redirects unauthenticated traffic to `/login` and injects `x-threwlines-auth-user` / `x-threwlines-auth-email` request headers on authenticated routes. The `/api/auth/login` and `/api/auth/logout` endpoints plus the public licensing API (`/api/license/v1/*`) are the only paths exempted from the session check.
 
 Everyone with superadmin credentials has unrestricted access; expense edit controls and admin billing endpoints enforce this role server-side. Browser code never ships a privileged database credential.

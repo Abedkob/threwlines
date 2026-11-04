@@ -76,8 +76,8 @@
   box-shadow: 0 9px 0 #e8ebef, 0 18px 0 #e8ebef, 0 27px 0 #e8ebef;
 }
 
-.template-background-choice-idevelopit-wave .template-background-swatch::before,
-.template-background-choice-idevelopit-wave .template-background-swatch::after {
+.template-background-choice-threwlines-wave .template-background-swatch::before,
+.template-background-choice-threwlines-wave .template-background-swatch::after {
   content: "";
   position: absolute;
   z-index: 1;
@@ -90,7 +90,7 @@
   transform: skewY(-9deg);
 }
 
-.template-background-choice-idevelopit-wave .template-background-swatch::after {
+.template-background-choice-threwlines-wave .template-background-swatch::after {
   right: 11px;
   top: -6px;
   width: 19px;
@@ -194,7 +194,7 @@
   opacity: 0.13;
 }
 
-.invoice-background-idevelopit-wave::after {
+.invoice-background-threwlines-wave::after {
   display: none;
 }
 
@@ -202,7 +202,7 @@
   overflow: hidden;
 }
 
-.invoice-background-idevelopit-wave .invoice-document-number {
+.invoice-background-threwlines-wave .invoice-document-number {
   z-index: 1;
   color: rgba(72, 86, 44, 0.13);
 }

@@ -7,14 +7,14 @@ This runbook assumes you already have a Dokploy instance reachable from a browse
 In Dokploy → your project → **Create → Database → Postgres**.
 
 - Image: `postgres:16-alpine` (or newer)
-- Database name: `idevelopit_vault`
-- User / password: whatever you like; Dokploy will show you the credentials and the in-cluster hostname (e.g. `idevelopit-vault-db`).
+- Database name: `threwlines`
+- User / password: whatever you like; Dokploy will show you the credentials and the in-cluster hostname (e.g. `threwlines-db`).
 - Volume: enable the data volume (default `/var/lib/postgresql/data`).
 
 Copy the connection string Dokploy prints. It looks like:
 
 ```
-postgres://vault:<password>@idevelopit-vault-db:5432/idevelopit_vault
+postgres://vault:<password>@threwlines-db:5432/threwlines
 ```
 
 ## 2. Create the application
@@ -77,14 +77,14 @@ That applies `scripts/local-schema.sql` and `scripts/local-seed.sql`. The script
 
 ## 7. Change the seeded admin password
 
-The seed creates `admin@idevelopit.local` with password `vault-dev-2026`. **Do this before anyone else gets the URL.**
+The seed creates `admin@threwlines.local` with password `vault-dev-2026`. **Do this before anyone else gets the URL.**
 
 There is no change-password screen yet, so this is the only way — run it against the Postgres service once:
 
 ```sql
 update profiles
 set password_hash = crypt('<new-strong-password>', gen_salt('bf', 12))
-where email = 'admin@idevelopit.local';
+where email = 'admin@threwlines.local';
 ```
 
 (Requires the `pgcrypto` extension, which `local-schema.sql` already enables.)

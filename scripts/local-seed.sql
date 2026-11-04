@@ -1,14 +1,14 @@
 -- ============================================================
--- idevelopit-vault - local development seed
+-- threwlines - local development seed
 -- Run AFTER local-schema.sql. Safe to re-run.
--- Default login: admin@idevelopit.local / vault-dev-2026
+-- Default login: admin@threwlines.local / vault-dev-2026
 -- (bcrypt hash below). Change the password before any real use.
 -- ============================================================
 
 insert into profiles (id, email, password_hash, name, app_role)
 values (
   gen_random_uuid(),
-  'admin@idevelopit.local',
+  'admin@threwlines.local',
   '$2b$12$d2BaFOqWrrTlItuMYRCN2ObGT8T9IqFSKkaQKI7R/IBJR1X0UIqu2',
   'Admin',
   'superadmin'
@@ -32,7 +32,7 @@ on conflict (name) do nothing;
 do $$
 declare owner uuid;
 begin
-  select id into owner from profiles where email = 'admin@idevelopit.local';
+  select id into owner from profiles where email = 'admin@threwlines.local';
 
   if not exists (select 1 from contacts) then
     insert into contacts (name, instagram, whatsapp, email, stage, assigned_to, notes, created_by) values

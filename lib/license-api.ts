@@ -130,10 +130,10 @@ export function optionalString(value: unknown, max: number) {
   return typeof value === "string" ? value.slice(0, max) : null;
 }
 
-// License keys look like "IDV-<product>-XXXXX-XXXXX-...-XXXXX" where each
+// License keys look like "TL-<product>-XXXXX-XXXXX-...-XXXXX" where each
 // group is 5 uppercase alphanumerics. Validate before touching the DB so the
 // RPC isn't a cheap enumeration target.
-const LICENSE_KEY_RE = /^IDV-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$/;
+const LICENSE_KEY_RE = /^TL-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$/;
 export function requiredLicenseKey(value: unknown): string {
   const key = requiredString(value, 200);
   if (!LICENSE_KEY_RE.test(key)) throw new Error("LICENSE_INVALID");

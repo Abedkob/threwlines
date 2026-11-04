@@ -1,4 +1,4 @@
--- idevelopit-vault — richer local development data
+-- threwlines — richer local development data
 -- Run AFTER local-schema.sql and local-seed.sql. Safe to re-run.
 --
 -- Exists so the billing and licensing screens have something to render:
@@ -15,7 +15,7 @@ from (values
   ('orbit-pro', 'Orbit Pro', 'Desktop scheduling suite for clinics.', 5, 14, 24),
   ('ledgerkit', 'LedgerKit', 'Point-of-sale and receipts for small retail.', 3, 7, 12)
 ) as v(code, name, description, maxact, grace, hours)
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 on conflict (code) do nothing;
 
 -- Contracts ---------------------------------------------------------
@@ -24,7 +24,7 @@ select c.id, 'CTR-2026-004', 'Orbit Pro — annual support retainer',
        date '2026-01-15', date '2026-12-31', 15, 14, 'USD', 'active',
        'Renews annually unless cancelled 30 days before term end.', p.id
 from contacts c
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 where c.name = 'Layal Haddad'
   and not exists (select 1 from client_contracts where contract_number = 'CTR-2026-004');
 
@@ -44,7 +44,7 @@ from (values
   ('INV-2026-0046', 'Karim Nassar', 'cancelled',      date '2026-07-07', date '2026-07-21',  450.00,   0.00, 'Cancelled: project put on hold by the client.')
 ) as v(number, contact_name, status, inv_date, due_date, subtotal, discount, notes)
 join contacts c on c.name = v.contact_name
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 where not exists (select 1 from invoices i where i.invoice_number = v.number);
 
 -- Invoice line items -------------------------------------------------
@@ -73,7 +73,7 @@ from (values
   ('INV-2026-0042', 1500.00, 'whish', date '2026-09-22', 'WSH-55120',  'Deposit, 50 percent.')
 ) as v(number, amount, method, paid_on, reference, notes)
 join invoices i on i.invoice_number = v.number
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 where not exists (select 1 from invoice_payments x where x.invoice_id = i.id and x.transaction_reference = v.reference);
 
 -- Contact-level ledger -------------------------------------------------
@@ -99,7 +99,7 @@ from (values
   (240.00, 'Hosting and backups, quarterly',   date '2026-09-30')
 ) as v(amount, description, spent_on)
 join lateral (select id from expense_categories order by name limit 1) cat on true
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 where not exists (select 1 from expenses x where x.description = v.description);
 
 -- Licences, covering every effective status ------------------------------
@@ -124,7 +124,7 @@ from (values
 ) as v(contact_name, product_code, prefix, last_four, ltype, status, starts_at, expires_at, maxact, grace, hours, entitlements, notes)
 join contacts c on c.name = v.contact_name
 join licensed_products pr on pr.code = v.product_code
-cross join (select id from profiles where email = 'admin@idevelopit.local') p
+cross join (select id from profiles where email = 'admin@threwlines.local') p
 where not exists (select 1 from licenses x where x.key_prefix = v.prefix);
 
 commit;

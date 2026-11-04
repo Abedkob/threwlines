@@ -1,6 +1,6 @@
 import { importJWK, SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-const ISSUER = "idevelopit-vault";
+const ISSUER = "threwlines";
 const ALG = "ES256";
 
 export type LicenseTokenClaims = JWTPayload & {
@@ -13,7 +13,7 @@ export type LicenseTokenClaims = JWTPayload & {
 };
 
 function getKeyId() {
-  return process.env.LICENSE_SIGNING_KEY_ID ?? "idv-license-1";
+  return process.env.LICENSE_SIGNING_KEY_ID ?? "threwlines-license-1";
 }
 
 async function privateKey() {

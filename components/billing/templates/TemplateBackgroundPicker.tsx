@@ -19,7 +19,7 @@ const choices: Array<{
     icon: FileText,
   },
   {
-    value: "idevelopit-wave",
+    value: "threwlines-wave",
     label: "Signature wave",
     description: "A print-safe lime ribbon inspired by the official site.",
     icon: Waves,

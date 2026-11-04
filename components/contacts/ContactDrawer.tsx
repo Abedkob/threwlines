@@ -136,8 +136,8 @@ export function ContactDrawer({
   }, [loadFeeds]);
   useEffect(() => {
     const refreshBilling = () => void loadFeeds();
-    window.addEventListener("idevelopit-vault:billing-changed", refreshBilling);
-    return () => window.removeEventListener("idevelopit-vault:billing-changed", refreshBilling);
+    window.addEventListener("threwlines:billing-changed", refreshBilling);
+    return () => window.removeEventListener("threwlines:billing-changed", refreshBilling);
   }, [loadFeeds]);
   const dialogRef = useDialogFocus<HTMLElement>(onClose);
 

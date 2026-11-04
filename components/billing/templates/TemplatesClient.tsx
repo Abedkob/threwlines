@@ -30,7 +30,7 @@ const base: TemplateConfig = {
   paperSize: "A4",
   orientation: "portrait",
   primaryColor: "#111827",
-  backgroundStyle: "idevelopit-wave",
+  backgroundStyle: "threwlines-wave",
   fontFamily: "Arial",
   logoWidth: 180,
   stampWidth: 150,
@@ -230,7 +230,7 @@ export function TemplatesClient() {
             ) : rows.length === 0 ? (
               <div className="template-library-state"><FileText size={19} /><strong>No templates yet</strong><span>Create your first reusable document system.</span></div>
             ) : rows.map((row) => {
-              const wave = row.config.backgroundStyle === "idevelopit-wave";
+              const wave = row.config.backgroundStyle === "threwlines-wave";
               return (
                 <button
                   key={row.id}

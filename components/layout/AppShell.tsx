@@ -8,7 +8,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { apiFetch } from "@/lib/api/client";
 import type { NavigationCounts } from "@/types/db";
 
-const SIDEBAR_PREFERENCE = "idevelopit-vault:sidebar-collapsed";
+const SIDEBAR_PREFERENCE = "threwlines:sidebar-collapsed";
 
 export function AppShell({
   children,
@@ -57,10 +57,10 @@ export function AppShell({
       }
     }
     void refreshBadges();
-    window.addEventListener("idevelopit-vault:data-changed", refreshBadges);
+    window.addEventListener("threwlines:data-changed", refreshBadges);
     return () => {
       active = false;
-      window.removeEventListener("idevelopit-vault:data-changed", refreshBadges);
+      window.removeEventListener("threwlines:data-changed", refreshBadges);
     };
   }, []);
 

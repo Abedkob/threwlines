@@ -1,5 +1,5 @@
 -- ============================================================
--- idevelopit-vault - local PostgreSQL schema
+-- threwlines - local PostgreSQL schema
 -- Consolidates schema, billing, performance, roles, licensing and
 -- billing functions for a plain PostgreSQL 14+ database (no Supabase).
 -- Run ONCE against an empty database. No RLS, no auth schema: the
@@ -792,7 +792,7 @@ begin
   if not found then raise exception 'Choose an active product'; end if;
   if not exists(select 1 from public.contacts where id=v_contact_id) then raise exception 'Customer not found'; end if;
   v_random := upper(encode(gen_random_bytes(20),'hex'));
-  v_key := 'IDV-' || upper(regexp_replace(v_product.code,'[^a-zA-Z0-9]','','g')) || '-' ||
+  v_key := 'TL-' || upper(regexp_replace(v_product.code,'[^a-zA-Z0-9]','','g')) || '-' ||
     substr(v_random,1,5) || '-' || substr(v_random,6,5) || '-' ||
     substr(v_random,11,5) || '-' || substr(v_random,16,5) || '-' ||
     substr(v_random,21,5) || '-' || substr(v_random,26,5) || '-' ||

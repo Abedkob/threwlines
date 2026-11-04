@@ -240,7 +240,7 @@ export type AppSettings = {
   updated_at: string;
 };
 
-export type TemplateBackgroundStyle = "clean" | "idevelopit-wave";
+export type TemplateBackgroundStyle = "clean" | "threwlines-wave";
 
 export type TemplateConfig = {
   paperSize: "A4";

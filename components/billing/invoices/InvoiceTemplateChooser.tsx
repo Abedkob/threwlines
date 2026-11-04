@@ -25,7 +25,7 @@ export function InvoiceTemplateChooser({
         <div className="invoice-template-options">
           {templates.map((template) => {
             const selected = value === template.id;
-            const wave = template.config.backgroundStyle === "idevelopit-wave";
+            const wave = template.config.backgroundStyle === "threwlines-wave";
             return (
               <button
                 type="button"

@@ -1,5 +1,5 @@
 export const TOKEN_EXPIRY = "7d";
-export const COOKIE_NAME = "idv-session";
+export const COOKIE_NAME = "threwlines-session";
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 // Read lazily so the secret is resolved at call time, not import time.

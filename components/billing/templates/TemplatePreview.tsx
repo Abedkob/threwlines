@@ -35,7 +35,7 @@ export function TemplatePreview({ config, documentType, templateName, appSetting
           "--invoice-font": config.fontFamily,
         } as React.CSSProperties}
       >
-        {backgroundStyle === "idevelopit-wave" && (
+        {backgroundStyle === "threwlines-wave" && (
           <DocumentWave className="template-preview-wave-art" />
         )}
 

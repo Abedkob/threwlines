@@ -1,4 +1,4 @@
-# idevelopit-vault Licensing API
+# threwlines Licensing API
 
 The licensing API is served by the Next.js route handlers under `/api/license/v1/`, backed by the local PostgreSQL database. Its database credential and signing private key remain server-side.
 
@@ -9,7 +9,7 @@ The licensing API is served by the Next.js route handlers under `/api/license/v1
 3. Set the printed values, plus `LICENSE_ALLOWED_ORIGINS`, in the server environment (for example `.env.local`):
 
    ```bash
-   LICENSE_SIGNING_KEY_ID=idv-license-1
+   LICENSE_SIGNING_KEY_ID=threwlines-license-1
    LICENSE_SIGNING_PRIVATE_JWK='<private JWK JSON>'
    LICENSE_SIGNING_PUBLIC_JWK='<public JWK JSON>'
    LICENSE_ALLOWED_ORIGINS=https://your-app.example
@@ -36,7 +36,7 @@ All POST bodies are JSON. Save the `activation_token` returned by activation and
 
 ```json
 {
-  "license_key": "IDV-DESKTOP-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+  "license_key": "TL-DESKTOP-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
   "product_code": "desktop-suite",
   "installation_id": "local-installation-uuid",
   "device_label": "Reception PC",
