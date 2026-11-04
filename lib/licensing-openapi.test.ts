@@ -100,7 +100,7 @@ test("activate is unauthenticated and the others are not", () => {
 
 test("the licence key pattern matches the one the server validates against", () => {
   const specPattern = spec.components.schemas.ActivateRequest.properties.license_key.pattern;
-  const source = readFileSync("lib/license-api.ts", "utf8");
+  const source = readFileSync("lib/license-key.ts", "utf8");
   const serverPattern = source.match(/LICENSE_KEY_RE\s*=\s*\/(.+?)\/[gimsuy]*;/)?.[1];
   assert.ok(serverPattern, "could not find LICENSE_KEY_RE");
   assert.equal(specPattern, serverPattern, "the documented key format has drifted from the server's");

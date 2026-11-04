@@ -1,5 +1,6 @@
 import { rpc } from "@/lib/db/query";
 import { signLicenseToken, verifyLicenseToken } from "@/lib/auth/license-token";
+import { LICENSE_KEY_RE, normalizeLicenseKey } from "@/lib/license-key";
 
 const messages: Record<string, string> = {
   LICENSE_INVALID: "The license could not be validated.",
@@ -130,12 +131,11 @@ export function optionalString(value: unknown, max: number) {
   return typeof value === "string" ? value.slice(0, max) : null;
 }
 
-// License keys look like "TL-<product>-XXXXX-XXXXX-...-XXXXX" where each
-// group is 5 uppercase alphanumerics. Validate before touching the DB so the
-// RPC isn't a cheap enumeration target.
-const LICENSE_KEY_RE = /^TL-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$/;
+// The key shape lives in lib/license-key.ts. Validate before touching the
+// DB so the RPC isn't a cheap enumeration target, and normalise first so
+// that case never decides validity.
 export function requiredLicenseKey(value: unknown): string {
-  const key = requiredString(value, 200);
+  const key = normalizeLicenseKey(requiredString(value, 200));
   if (!LICENSE_KEY_RE.test(key)) throw new Error("LICENSE_INVALID");
   return key;
 }

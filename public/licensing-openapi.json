@@ -181,7 +181,7 @@
           "license_key": {
             "type": "string",
             "pattern": "^TL-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$",
-            "description": "The key issued to the customer. Shown once at issue time and never recoverable: only its digest is stored."
+            "description": "The key issued to the customer. Shown once at issue time and never recoverable: only its digest is stored. Leading and trailing whitespace is stripped and the key is upper-cased before matching, so case does not affect validity; the pattern describes the canonical form."
           },
           "installation_id": {
             "type": "string",
