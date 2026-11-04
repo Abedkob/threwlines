@@ -46,7 +46,11 @@ function publicRoutes(dir = "app/api/license/v1"): { path: string; methods: stri
     if (statSync(full).isDirectory()) return publicRoutes(full);
     if (entry !== "route.ts") return [];
     const source = readFileSync(full, "utf8");
-    const methods = [...source.matchAll(/export (?:async )?function (GET|POST|PUT|PATCH|DELETE)\b/g)].map(
+    // Routes declare a handler either as a function or by assigning a shared
+    // one (export const POST = handleValidate). Matching only the first
+    // form made this scan find no methods at all for an aliased route, so
+    // the parity check below passed without checking anything.
+    const methods = [...source.matchAll(/export (?:(?:async )?function|const) (GET|POST|PUT|PATCH|DELETE)\b/g)].map(
       (m) => m[1].toLowerCase(),
     );
     const path = "/" + dir.split("\\").join("/").replace("app/api/license/v1", "").replace(/^\//, "");
@@ -146,4 +150,20 @@ test("the docs page degrades to something useful if the renderer fails", () => {
   const page = readFileSync("public/licensing-docs.html", "utf8");
   assert.match(page, /tl-fallback/, "there must be fallback content inside the render target");
   assert.match(page, /Download spec/, "the raw spec must be reachable without the renderer");
+});
+
+test("heartbeat exists and cannot drift from validate", () => {
+  // The Supabase Edge Function routed /v1/licenses/heartbeat and
+  // /v1/licenses/validate to one handler, so shipping clients call either.
+  // The Next rewrite dropped heartbeat, and a client polling it got the app's
+  // HTML 404 page instead of a token - which reads as "the licence stopped
+  // working". Both routes must delegate to the same module so a change to the
+  // validation rules cannot apply to only one of them.
+  const heartbeat = readFileSync("app/api/license/v1/licenses/heartbeat/route.ts", "utf8");
+  const validate = readFileSync("app/api/license/v1/licenses/validate/route.ts", "utf8");
+  const shared = /from "@\/lib\/license-validate"/;
+  assert.match(heartbeat, shared, "heartbeat must use the shared validation handler");
+  assert.match(validate, shared, "validate must use the same shared handler, not its own copy");
+  assert.match(heartbeat, /export const POST/, "heartbeat must accept POST");
+  assert.match(heartbeat, /export function OPTIONS/, "heartbeat needs the CORS preflight like its siblings");
 });

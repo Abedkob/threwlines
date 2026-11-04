@@ -75,6 +75,29 @@
         }
       }
     },
+    "/licenses/heartbeat": {
+      "post": {
+        "tags": ["Licences"],
+        "operationId": "heartbeatLicense",
+        "summary": "Alias for validate, for clients that poll a heartbeat",
+        "description": "Identical to `/licenses/validate`: same request body, same response, same rate limit, same token refresh. It exists because clients built against the previous licensing service poll this path on a timer.\n\nNew integrations should call `/licenses/validate` instead.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ValidateRequest" },
+              "example": { "installation_id": "desktop-abc-123", "application_version": "2.4.2" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Activation" },
+          "401": { "$ref": "#/components/responses/Failure" },
+          "403": { "$ref": "#/components/responses/Failure" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
     "/licenses/deactivate": {
       "post": {
         "tags": ["Licences"],
