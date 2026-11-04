@@ -12,7 +12,7 @@ const PUBLIC_PREFIXES = ["/api/license/v1/"];
 // The licensing API description is published for integrators, so it has to
 // be reachable without a session - otherwise fetching it returns the login
 // page and every generated client starts from a redirect.
-const PUBLIC_PATHS = ["/licensing-openapi.json"];
+const PUBLIC_PATHS = ["/licensing-openapi.json", "/licensing-docs.html"];
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_AUTH.has(pathname)) return true;

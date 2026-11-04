@@ -122,3 +122,28 @@ test("the spec is reachable without a session", () => {
     "the public-path list must actually be consulted",
   );
 });
+
+test("the rendered docs page is public, pinned and integrity-checked", () => {
+  const page = readFileSync("public/licensing-docs.html", "utf8");
+  assert.match(page, /\/licensing-openapi\.json/, "the page must render the published spec");
+  // A CDN script without SRI means a compromised CDN runs arbitrary code on a
+  // page we publish. A floating version means the renderer can change under it.
+  const script = page.match(/<script[\s\S]*?cdn\.jsdelivr\.net[\s\S]*?>/)?.[0] ?? "";
+  assert.ok(script, "expected the renderer to load from the pinned CDN");
+  assert.match(script, /integrity="sha384-[A-Za-z0-9+/=]+"/, "the CDN script needs an SRI hash");
+  assert.match(script, /crossorigin="anonymous"/, "SRI requires crossorigin on a cross-origin script");
+  assert.match(script, /redoc@\d+\.\d+\.\d+\//, 'the renderer version must be pinned, not "latest"');
+
+  const middleware = readFileSync("middleware.ts", "utf8");
+  assert.match(
+    middleware,
+    /PUBLIC_PATHS[\s\S]{0,200}licensing-docs\.html/,
+    "the docs page must be public, or it redirects integrators to /login",
+  );
+});
+
+test("the docs page degrades to something useful if the renderer fails", () => {
+  const page = readFileSync("public/licensing-docs.html", "utf8");
+  assert.match(page, /tl-fallback/, "there must be fallback content inside the render target");
+  assert.match(page, /Download spec/, "the raw spec must be reachable without the renderer");
+});

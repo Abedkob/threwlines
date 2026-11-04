@@ -30,7 +30,13 @@ An OpenAPI 3.1 description of this API ships with the app:
 https://<your-host>/licensing-openapi.json
 ```
 
-Import it into Postman, Insomnia or Bruno, or generate a client from it. It is
+A rendered reference is served alongside it:
+
+```
+https://<your-host>/licensing-docs.html
+```
+
+Import the JSON into Postman, Insomnia or Bruno, or generate a client from it. It is
 also in the repository at `public/licensing-openapi.json`, and a test suite
 checks it against the real routes, the server's error codes and the licence-key
 pattern, so it cannot drift from the implementation.

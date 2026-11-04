@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ThrewLines Licensing API</title>
+    <meta
+      name="description"
+      content="Reference for the ThrewLines licensing API: activate, validate and deactivate product licences."
+    />
+    <link rel="icon" href="/threwlines-mark.svg" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+    />
+    <style>
+      :root {
+        --ink: #14171f;
+        --canvas: #f5f7fa;
+        --line: #dfe3eb;
+        --primary: #3449e0;
+        --accent: #b9ff00;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--canvas);
+        font-family: Inter, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      header.tl {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: var(--ink);
+        color: #fff;
+      }
+      .tl-mark {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        padding: 3px;
+        background: var(--accent);
+        border-radius: 8px;
+        flex: 0 0 auto;
+      }
+      .tl-mark img { width: 100%; height: 100%; object-fit: contain; }
+      .tl-name { display: grid; line-height: 1.15; }
+      .tl-name strong { font-size: 14px; font-weight: 600; letter-spacing: -0.02em; }
+      .tl-name small {
+        color: #8d95a4;
+        font: 500 10px/1 "JetBrains Mono", monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .tl-actions { margin-left: auto; display: flex; gap: 8px; }
+      .tl-actions a {
+        padding: 7px 12px;
+        border-radius: 6px;
+        border: 1px solid #2c313c;
+        color: #cdd3dd;
+        font-size: 13px;
+        text-decoration: none;
+      }
+      .tl-actions a:hover { color: #fff; background: #1d222c; }
+      .tl-actions a.primary {
+        color: #fff;
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+      .tl-actions a:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px #fff;
+      }
+      #redoc { background: #fff; }
+      .tl-fallback { padding: 40px 20px; max-width: 680px; margin: 0 auto; font-size: 15px; line-height: 1.7; }
+      @media (max-width: 600px) {
+        .tl-name small { display: none; }
+        .tl-actions a { padding: 7px 10px; font-size: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="tl">
+      <span class="tl-mark"><img src="/threwlines-bars.svg" alt="" /></span>
+      <span class="tl-name">
+        <strong>ThrewLines</strong>
+        <small>Licensing API</small>
+      </span>
+      <span class="tl-actions">
+        <a class="primary" href="/licensing-openapi.json" download>Download spec</a>
+        <a href="/api/license/v1/.well-known/jwks.json">Public keys</a>
+      </span>
+    </header>
+
+    <div id="redoc">
+      <p class="tl-fallback" id="tl-fallback">
+        Loading the reference. If this does not replace itself, the renderer could not load —
+        the raw specification is still available from the Download spec button above, and
+        imports into Postman, Insomnia or Bruno.
+      </p>
+    </div>
+
+    <!--
+      Pinned version, not "latest": an unpinned renderer could change under a
+      published docs page. The integrity hash is the sha384 of that exact
+      bundle, so a compromised or swapped CDN file simply fails to execute and
+      the fallback text above stays visible.
+    -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"
+      integrity="sha384-0GrsyTQc9Oqd8h+b2dbc4XdR2T/DYpy0tLNNstyx+LBMUyiBbcWPbEs9aRmUcaxD"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      (function () {
+        if (typeof Redoc === "undefined") return;
+        Redoc.init(
+          "/licensing-openapi.json",
+          {
+            hideDownloadButton: true,
+            expandResponses: "200",
+            jsonSampleExpandLevel: 3,
+            theme: {
+              colors: { primary: { main: "#3449E0" }, http: { post: "#3449E0", get: "#15775B" } },
+              typography: {
+                fontSize: "15px",
+                fontFamily: "Inter, system-ui, sans-serif",
+                headings: { fontFamily: "Inter, system-ui, sans-serif", fontWeight: "600" },
+                code: { fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" },
+              },
+              sidebar: { backgroundColor: "#f5f7fa", textColor: "#20232c" },
+              rightPanel: { backgroundColor: "#14171f" },
+            },
+          },
+          document.getElementById("redoc"),
+        );
+      })();
+    </script>
+  </body>
+</html>
