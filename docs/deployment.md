@@ -77,7 +77,9 @@ That applies `scripts/local-schema.sql` and `scripts/local-seed.sql`. The script
 
 ## 7. Change the seeded admin password
 
-The seed creates `admin@idevelopit.local` with password `vault-dev-2026`. Sign in at `https://vault.yourcompany.internal/login`, then open the settings page and change it. If you prefer, instead run this against the Postgres service once:
+The seed creates `admin@idevelopit.local` with password `vault-dev-2026`. **Do this before anyone else gets the URL.**
+
+There is no change-password screen yet, so this is the only way — run it against the Postgres service once:
 
 ```sql
 update profiles
@@ -86,6 +88,8 @@ where email = 'admin@idevelopit.local';
 ```
 
 (Requires the `pgcrypto` extension, which `local-schema.sql` already enables.)
+
+Repeat for each of the other two team members once you have created them.
 
 ## 8. Verify
 
