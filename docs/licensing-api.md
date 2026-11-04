@@ -22,6 +22,19 @@ The licensing API is served by the Next.js route handlers under `/api/license/v1
 
 Never place the database credential, `JWT_SECRET`, or the private signing JWK in `NEXT_PUBLIC_*` variables.
 
+## Machine-readable spec
+
+An OpenAPI 3.1 description of this API ships with the app:
+
+```
+https://<your-host>/licensing-openapi.json
+```
+
+Import it into Postman, Insomnia or Bruno, or generate a client from it. It is
+also in the repository at `public/licensing-openapi.json`, and a test suite
+checks it against the real routes, the server's error codes and the licence-key
+pattern, so it cannot drift from the implementation.
+
 ## Base URL
 
 ```text

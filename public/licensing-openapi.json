@@ -1,0 +1,376 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ThrewLines Licensing API",
+    "version": "1.0.0",
+    "summary": "Activate, validate and deactivate product licences.",
+    "description": "Public API for applications that ship under a ThrewLines licence.\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token.\n\n**Offline verification.** Every successful call returns an `activation_token`: an ES256 JWT you verify locally against the public key published at `/.well-known/jwks.json`. Verify it offline until `check_after`, and keep working until `offline_grace_until`. That is the intended steady state - do not call the API on every launch.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable."
+  },
+  "servers": [
+    {
+      "url": "https://{host}/api/license/v1",
+      "description": "Your ThrewLines deployment",
+      "variables": {
+        "host": {
+          "default": "threwlines.example.com",
+          "description": "The host your ThrewLines instance is served from"
+        }
+      }
+    }
+  ],
+  "tags": [
+    { "name": "Licences", "description": "Activation lifecycle" },
+    { "name": "Keys", "description": "Public keys for offline verification" }
+  ],
+  "paths": {
+    "/licenses/activate": {
+      "post": {
+        "tags": ["Licences"],
+        "summary": "Activate a licence on one installation",
+        "description": "Call once per installation. Returns an `activation_token` to persist and verify offline. Re-activating the same `installation_id` is idempotent and does not consume an extra activation slot.\n\nRate limited on two axes: 30 requests per minute per IP, and 60 per minute per licence key, so one key cannot be brute-forced from many addresses.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ActivateRequest" },
+              "example": {
+                "license_key": "TL-ORBITPRO-B5BF5-C21C6-1C7F3-A3944-B6C2C-7E156-574F2-1BF93",
+                "installation_id": "desktop-abc-123",
+                "product_code": "orbit-pro",
+                "device_label": "Reception PC",
+                "platform": "windows",
+                "application_version": "2.4.1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Activation" },
+          "400": { "$ref": "#/components/responses/Failure" },
+          "403": { "$ref": "#/components/responses/Failure" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/licenses/validate": {
+      "post": {
+        "tags": ["Licences"],
+        "summary": "Re-check an activation and refresh its token",
+        "description": "Call once the token's `check_after` has passed. Returns a fresh `activation_token` with new `check_after` and `offline_grace_until` values.\n\nThe `installation_id` must match the one the token was issued for. Rate limited to 120 requests per minute per IP.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ValidateRequest" },
+              "example": { "installation_id": "desktop-abc-123", "application_version": "2.4.2" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Activation" },
+          "401": { "$ref": "#/components/responses/Failure" },
+          "403": { "$ref": "#/components/responses/Failure" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/licenses/deactivate": {
+      "post": {
+        "tags": ["Licences"],
+        "summary": "Release an activation slot",
+        "description": "Frees the slot so the licence can be activated elsewhere. Call this when uninstalling or moving an installation. Rate limited to 30 requests per minute per IP.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeactivateRequest" },
+              "example": { "installation_id": "desktop-abc-123" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The activation was released.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" },
+                "example": {
+                  "ok": true,
+                  "code": "DEACTIVATED",
+                  "request_id": "cbc50134-03c2-4571-9702-50195a52c9fa"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Failure" },
+          "404": { "$ref": "#/components/responses/Failure" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/.well-known/jwks.json": {
+      "get": {
+        "tags": ["Keys"],
+        "summary": "Public keys for verifying activation tokens",
+        "description": "Fetch once and cache. Match the token header's `kid` to a key here, then verify the ES256 signature offline. Keys are not rotated: rotating would invalidate every licence already in the field.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "A JWK Set containing the active public key.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Jwks" },
+                "example": {
+                  "keys": [
+                    {
+                      "kty": "EC",
+                      "crv": "P-256",
+                      "x": "Gy3T7A12G4YC3OeOglzsftSV8eCW_Z28_Ra_FiBEzHs",
+                      "y": "z_HlZETZk9_yQpED1huNlkqlH_Sw4FSNse0AWiiX2fg",
+                      "kid": "threwlines-license-1",
+                      "alg": "ES256",
+                      "use": "sig"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ActivationToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "The `activation_token` returned by `/licenses/activate`."
+      }
+    },
+    "schemas": {
+      "ActivateRequest": {
+        "type": "object",
+        "required": ["license_key", "installation_id", "product_code"],
+        "properties": {
+          "license_key": {
+            "type": "string",
+            "pattern": "^TL-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$",
+            "description": "The key issued to the customer. Shown once at issue time and never recoverable: only its digest is stored."
+          },
+          "installation_id": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "A stable identifier you generate per installation. Send the same string on later validate and deactivate calls. It is hashed before storage."
+          },
+          "product_code": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "The product this installation belongs to. Must match the licence or the call fails with PRODUCT_MISMATCH."
+          },
+          "device_label": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Human-readable label shown in the licence registry."
+          },
+          "platform": { "type": "string", "maxLength": 80 },
+          "application_version": { "type": "string", "maxLength": 80 }
+        }
+      },
+      "ValidateRequest": {
+        "type": "object",
+        "required": ["installation_id"],
+        "properties": {
+          "installation_id": { "type": "string", "maxLength": 500 },
+          "application_version": { "type": "string", "maxLength": 80 }
+        }
+      },
+      "DeactivateRequest": {
+        "type": "object",
+        "required": ["installation_id"],
+        "properties": {
+          "installation_id": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "required": ["ok", "code", "request_id"],
+        "properties": {
+          "ok": { "type": "boolean", "const": true },
+          "code": { "type": "string" },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Quote this when reporting a problem; it appears in the server logs."
+          }
+        }
+      },
+      "ActivationResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "code",
+          "request_id",
+          "activation_id",
+          "product_code",
+          "activation_token",
+          "check_after",
+          "offline_grace_until"
+        ],
+        "properties": {
+          "ok": { "type": "boolean", "const": true },
+          "code": { "type": "string", "examples": ["LICENSE_ACTIVE"] },
+          "request_id": { "type": "string", "format": "uuid" },
+          "activation_id": { "type": "string", "format": "uuid" },
+          "product_code": { "type": "string" },
+          "license_type": { "type": "string", "enum": ["trial", "subscription", "perpetual"] },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "Null for perpetual licences."
+          },
+          "entitlements": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Whatever was recorded against the licence, for example {\"seats\": 3}."
+          },
+          "activation_token": {
+            "type": "string",
+            "description": "ES256 JWT. Persist it and verify offline."
+          },
+          "check_after": {
+            "type": "integer",
+            "description": "Unix seconds. Call validate once this has passed."
+          },
+          "offline_grace_until": {
+            "type": "integer",
+            "description": "Unix seconds. Keep working offline until this, then stop."
+          }
+        }
+      },
+      "Failure": {
+        "type": "object",
+        "required": ["ok", "code", "message", "request_id"],
+        "properties": {
+          "ok": { "type": "boolean", "const": false },
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable reason. Branch on this.",
+            "enum": [
+              "LICENSE_INVALID",
+              "LICENSE_EXPIRED",
+              "LICENSE_SUSPENDED",
+              "LICENSE_REVOKED",
+              "PRODUCT_MISMATCH",
+              "ACTIVATION_LIMIT_REACHED",
+              "INSTALLATION_NOT_FOUND",
+              "TOKEN_INVALID",
+              "RATE_LIMITED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable. May be reworded; do not parse."
+          },
+          "request_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "Jwks": {
+        "type": "object",
+        "required": ["keys"],
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kty": { "type": "string" },
+                "crv": { "type": "string" },
+                "x": { "type": "string" },
+                "y": { "type": "string" },
+                "kid": { "type": "string" },
+                "alg": { "type": "string" },
+                "use": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "TokenClaims": {
+        "type": "object",
+        "description": "The decoded payload of an activation_token. It contains no host, domain or URL, so moving your deployment to another domain does not invalidate issued licences.",
+        "properties": {
+          "iss": { "type": "string", "const": "threwlines" },
+          "aud": { "type": "string", "description": "The product code." },
+          "sub": { "type": "string", "format": "uuid", "description": "Licence id." },
+          "aid": { "type": "string", "format": "uuid", "description": "Activation id." },
+          "tv": {
+            "type": "integer",
+            "description": "Token version. Bumped to invalidate outstanding tokens for one licence."
+          },
+          "entitlements": { "type": "object", "additionalProperties": true },
+          "check_after": { "type": "integer" },
+          "grace_until": { "type": "integer" },
+          "iat": { "type": "integer" },
+          "nbf": { "type": "integer" },
+          "exp": { "type": "integer" },
+          "jti": { "type": "string", "format": "uuid" }
+        }
+      }
+    },
+    "responses": {
+      "Activation": {
+        "description": "The licence is active for this installation.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ActivationResponse" },
+            "example": {
+              "ok": true,
+              "code": "LICENSE_ACTIVE",
+              "request_id": "cbc50134-03c2-4571-9702-50195a52c9fa",
+              "activation_id": "664f809f-e2e0-4575-a1dc-cd0b2bb3b19c",
+              "product_code": "orbit-pro",
+              "license_type": "subscription",
+              "expires_at": "2027-11-04T00:00:00.000Z",
+              "entitlements": { "seats": 3 },
+              "activation_token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRocmV3bGluZXMtbGljZW5zZS0xIn0...",
+              "check_after": 1793842017,
+              "offline_grace_until": 1794446817
+            }
+          }
+        }
+      },
+      "Failure": {
+        "description": "The request was refused. Branch on `code`.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Failure" },
+            "example": {
+              "ok": false,
+              "code": "ACTIVATION_LIMIT_REACHED",
+              "message": "This license has reached its activation limit.",
+              "request_id": "cbc50134-03c2-4571-9702-50195a52c9fa"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests. Back off and retry.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Failure" },
+            "example": {
+              "ok": false,
+              "code": "RATE_LIMITED",
+              "message": "Too many requests. Try again shortly.",
+              "request_id": "cbc50134-03c2-4571-9702-50195a52c9fa"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [{ "ActivationToken": [] }]
+}

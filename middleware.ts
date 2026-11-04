@@ -9,10 +9,17 @@ const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout", "/api/health
 // Path prefixes for public API surfaces. The licensing API is called by
 // third-party customer applications that carry no session cookie.
 const PUBLIC_PREFIXES = ["/api/license/v1/"];
+// The licensing API description is published for integrators, so it has to
+// be reachable without a session - otherwise fetching it returns the login
+// page and every generated client starts from a redirect.
+const PUBLIC_PATHS = ["/licensing-openapi.json"];
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_AUTH.has(pathname)) return true;
-  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return (
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
 }
 
 export async function middleware(request: NextRequest) {
