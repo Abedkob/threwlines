@@ -4,7 +4,7 @@
     "title": "ThrewLines Licensing API",
     "version": "1.0.0",
     "summary": "Activate, validate and deactivate product licences.",
-    "description": "Public API for applications that ship under a ThrewLines licence.\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token.\n\n**Offline verification.** Every successful call returns an `activation_token`: an ES256 JWT you verify locally against the public key published at `/.well-known/jwks.json`. Verify it offline until `check_after`, and keep working until `offline_grace_until`. That is the intended steady state - do not call the API on every launch.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable."
+    "description": "Public API for applications that ship under a ThrewLines licence.\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token.\n\n**Offline verification.** Every successful call returns an `activation_token`: an ES256 JWT you verify locally against the public key published at `/.well-known/jwks.json`. Verify it offline until `check_after`, and keep working until `offline_grace_until`. That is the intended steady state - do not call the API on every launch.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable.\n\n**Retrying.** `RATE_LIMITED` is the only code worth retrying on its own - back off and try later. `INVALID_REQUEST` means your payload is wrong and will keep failing. Everything else is a decision about the licence itself and should be surfaced to the user. A transport failure, a non-JSON body or an HTML error page is not a licence verdict: keep the last good token and fall back to offline verification until `offline_grace_until`.\n\n**Base path.** The server URL above already ends in `/api/license/v1`, so append only `licenses/activate` and friends. Joining a path that repeats the version, or one with a leading slash, silently produces a URL this API does not serve and you will get an HTML error page rather than a JSON failure."
   },
   "servers": [
     {
@@ -186,7 +186,7 @@
           "installation_id": {
             "type": "string",
             "maxLength": 500,
-            "description": "A stable identifier you generate per installation. Send the same string on later validate and deactivate calls. It is hashed before storage."
+            "description": "A stable identifier you generate per installation, and persist. Send the same string on later validate and deactivate calls. It is hashed before storage. Activation slots are counted by this value: re-activating with an installation_id that is already active just refreshes it and consumes no extra slot, while each new value takes one until the licence reaches its activation limit. Generating a fresh value per launch will exhaust the licence."
           },
           "product_code": {
             "type": "string",
@@ -247,7 +247,7 @@
           "code": { "type": "string", "examples": ["LICENSE_ACTIVE"] },
           "request_id": { "type": "string", "format": "uuid" },
           "activation_id": { "type": "string", "format": "uuid" },
-          "product_code": { "type": "string" },
+          "product_code": { "type": "string", "description": "The licence's product code as stored, which is always lower-case. It may therefore differ in case from the product_code you sent. Compare case-insensitively." },
           "license_type": { "type": "string", "enum": ["trial", "subscription", "perpetual"] },
           "expires_at": {
             "type": ["string", "null"],
@@ -264,12 +264,14 @@
             "description": "ES256 JWT. Persist it and verify offline."
           },
           "check_after": {
-            "type": "integer",
-            "description": "Unix seconds. Call validate once this has passed."
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp. Call validate (or heartbeat) once this has passed. Note the token's own check_after claim is Unix seconds instead - same instant, different representation."
           },
           "offline_grace_until": {
-            "type": "integer",
-            "description": "Unix seconds. Keep working offline until this, then stop."
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp. Keep working offline until this, then stop. The token's grace_until claim is the same instant in Unix seconds."
           }
         }
       },
@@ -290,7 +292,10 @@
               "ACTIVATION_LIMIT_REACHED",
               "INSTALLATION_NOT_FOUND",
               "TOKEN_INVALID",
-              "RATE_LIMITED"
+              "RATE_LIMITED",
+              "LICENSE_NOT_STARTED",
+              "PRODUCT_DISABLED",
+              "INVALID_REQUEST"
             ]
           },
           "message": {
@@ -313,7 +318,7 @@
                 "crv": { "type": "string" },
                 "x": { "type": "string" },
                 "y": { "type": "string" },
-                "kid": { "type": "string" },
+                "kid": { "type": "string", "description": "Key id. Match the token header's kid against this to choose the verifying key; a ThrewLines deployment currently publishes one key, threwlines-license-1." },
                 "alg": { "type": "string" },
                 "use": { "type": "string" }
               }
@@ -326,7 +331,7 @@
         "description": "The decoded payload of an activation_token. It contains no host, domain or URL, so moving your deployment to another domain does not invalidate issued licences.",
         "properties": {
           "iss": { "type": "string", "const": "threwlines" },
-          "aud": { "type": "string", "description": "The product code." },
+          "aud": { "type": "string", "description": "The product code as stored, always lower-case - so a product registered as \"Abedz\" gives aud \"abedz\". Compare case-insensitively rather than against your configured value." },
           "sub": { "type": "string", "format": "uuid", "description": "Licence id." },
           "aid": { "type": "string", "format": "uuid", "description": "Activation id." },
           "tv": {

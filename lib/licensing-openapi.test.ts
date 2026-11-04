@@ -167,3 +167,51 @@ test("heartbeat exists and cannot drift from validate", () => {
   assert.match(heartbeat, /export const POST/, "heartbeat must accept POST");
   assert.match(heartbeat, /export function OPTIONS/, "heartbeat needs the CORS preflight like its siblings");
 });
+
+test("every failure code the server can emit is documented", () => {
+  // The test above checks documented is a subset of emitted. Without the
+  // reverse direction a new code reaches integrators undocumented, which is
+  // how LICENSE_NOT_STARTED, PRODUCT_DISABLED and INVALID_REQUEST stayed
+  // missing from a published spec.
+  const documented = new Set<string>(spec.components.schemas.Failure.properties.code.enum);
+  const source = readFileSync("lib/license-api.ts", "utf8");
+  const table = source.slice(source.indexOf("messages"), source.indexOf("messages") + 1200);
+  const emitted = [...table.matchAll(/^\s*([A-Z_]{4,}):/gm)].map((m) => m[1]);
+
+  // Present in the message table but unreachable: a disallowed origin gets an
+  // empty 403 from preflight(), so no response body ever carries this code.
+  // Returning it anywhere would quote it as a string literal, unlike the bare
+  // key in the message table. If that happens, document it and drop it here.
+  const UNREACHABLE = ["ORIGIN_NOT_ALLOWED"];
+  for (const code of UNREACHABLE) {
+    assert.ok(
+      !source.includes(`"${code}"`),
+      `${code} is now returned to clients - add it to the spec's enum and remove it from UNREACHABLE`,
+    );
+  }
+
+  const missing = emitted.filter((code) => !documented.has(code) && !UNREACHABLE.includes(code));
+  assert.deepEqual(missing, [], `codes the server emits but the spec omits: ${missing.join(", ")}`);
+});
+
+test("response timestamps are documented in the representation actually sent", () => {
+  // tokenResponse converts the token's integer claims with toISOString(), so
+  // the response carries strings while the claims carry Unix seconds. The spec
+  // typed the response fields as integers, which makes a generated client fail
+  // to deserialise a perfectly good activation.
+  const lines = readFileSync("lib/license-api.ts", "utf8").split("\n");
+  for (const field of ["check_after", "offline_grace_until"] as const) {
+    const line = lines.find((text) => text.trimStart().startsWith(`${field}: `));
+    assert.ok(line, `could not find where ${field} is serialised`);
+    assert.ok(
+      line.includes("toISOString()"),
+      `${field} is no longer an ISO string - the spec says it is`,
+    );
+    const property = spec.components.schemas.ActivationResponse.properties[field];
+    assert.equal(property.type, "string", `${field} is sent as an ISO string, not an integer`);
+    assert.equal(property.format, "date-time", `${field} should declare format: date-time`);
+  }
+  // The claims inside the JWT keep the numeric form.
+  assert.equal(spec.components.schemas.TokenClaims.properties.check_after.type, "integer");
+  assert.equal(spec.components.schemas.TokenClaims.properties.grace_until.type, "integer");
+});
