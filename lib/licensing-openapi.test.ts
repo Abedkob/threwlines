@@ -236,6 +236,64 @@ test("every endpoint the discovery document advertises is a documented path", ()
   assert.deepEqual(missing, [], `advertised but undocumented: ${missing.join(", ")}`);
 });
 
+test("the intro walks an integrator through the whole lifecycle", () => {
+  // Redoc renders info.description as the landing content of
+  // /licensing-docs.html, so this is what someone wiring the API into another
+  // application reads first. The spec alone describes endpoints without
+  // saying in what order to call them.
+  const intro: string = spec.info.description;
+  assert.ok(intro.includes("## Integrating"), "the intro must carry an integration walkthrough");
+  for (const name of Object.keys(licenseDiscovery().endpoints)) {
+    assert.ok(
+      intro.includes(`endpoints.${name}`),
+      `the walkthrough never tells an integrator when to call ${name}`,
+    );
+  }
+});
+
+test("the intro warns about the faults that have actually bitten", () => {
+  // Each of these cost a debugging session. A doc rewrite that drops the
+  // warning hands the next integrator the same afternoon.
+  const intro: string = spec.info.description;
+  const warnings: [string, string][] = [
+    ["installation_id", "a regenerated installation id burns an activation slot"],
+    ["ACTIVATION_LIMIT_REACHED", "the symptom of a regenerated installation id"],
+    ["HTML error page", "an HTML body read as a licence verdict"],
+    ["case-insensitively", "product codes come back lower-case"],
+  ];
+  for (const [needle, why] of warnings) {
+    assert.ok(intro.includes(needle), `the intro no longer warns about ${why}`);
+  }
+});
+
+test("every error code named in the intro is one the server can return", () => {
+  // Prose drifts faster than schemas. A code invented or misspelled in the
+  // guide sends an integrator looking for a branch that never fires.
+  const intro: string = spec.info.description;
+  const documented = new Set<string>(spec.components.schemas.Failure.properties.code.enum);
+  // Screaming snake case only, so ISO, JSON and POST are not mistaken for codes.
+  const named = [...new Set(intro.match(/[A-Z]+_[A-Z_]+/g) ?? [])];
+  assert.ok(named.length > 0, "expected the intro to name at least one error code");
+  const unknown = named.filter((code) => !documented.has(code));
+  assert.deepEqual(unknown, [], `codes named in the intro but not in the Failure enum: ${unknown.join(", ")}`);
+});
+
+test("the casing guidance matches what the server actually does", () => {
+  // The intro promises keys work in any case. That is only true while the
+  // normaliser upper-cases before the pattern check.
+  const intro: string = spec.info.description;
+  assert.ok(intro.includes("any case"), "the intro no longer documents case-insensitive keys");
+  const source = readFileSync("lib/license-key.ts", "utf8");
+  assert.ok(
+    source.includes("toUpperCase()"),
+    "the key normaliser no longer upper-cases, so the intro's promise is false",
+  );
+  assert.ok(
+    source.includes("trim()"),
+    "the key normaliser no longer trims, so the intro's whitespace promise is false",
+  );
+});
+
 test("the spec's base path is the one the discovery document advertises", () => {
   // servers[0].url carries it as "https://{host}/api/license/v1". If these
   // drift, the two halves of the document disagree about where the API lives.
