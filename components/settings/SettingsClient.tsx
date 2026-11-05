@@ -267,8 +267,27 @@ function CategoryRow({
 
 export type WorkspaceModule = "services" | "categories";
 
+// One module per page, so the header describes that module rather than the
+// pair. The combined wording is kept as the fallback for a view with no `only`.
+const MODULE_COPY: Record<WorkspaceModule, { heading: string; blurb: string }> = {
+  services: {
+    heading: "Services",
+    blurb: "Services carry the prices quoted on invoices, so the names here are the ones the team sells by.",
+  },
+  categories: {
+    heading: "Expense categories",
+    blurb: "Categories keep expense reporting comparable from one month to the next.",
+  },
+};
+
+const ALL_MODULES = {
+  heading: "Keep the team's vocabulary consistent.",
+  blurb: "Services drive payment defaults. Categories keep expense reporting comparable.",
+};
+
 export function SettingsClient({ only }: { only?: WorkspaceModule }) {
   const show = (module: WorkspaceModule) => !only || only === module;
+  const copy = only ? MODULE_COPY[only] : ALL_MODULES;
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [serviceName, setServiceName] = useState("");
@@ -390,11 +409,8 @@ export function SettingsClient({ only }: { only?: WorkspaceModule }) {
         </span>
         <div>
           <p className="eyebrow">Shared configuration</p>
-          <h2>Keep the team&apos;s vocabulary consistent.</h2>
-          <p>
-            Services drive payment defaults. Categories keep expense reporting
-            comparable.
-          </p>
+          <h2>{copy.heading}</h2>
+          <p>{copy.blurb}</p>
         </div>
       </div>
       <div className="settings-grid">

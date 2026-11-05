@@ -8,11 +8,45 @@ import type { AppSettings } from "@/types/db";
 
 export type BillingModule = "company" | "invoicing" | "payments";
 
+// Each module is its own page, so the header has to describe the module the
+// reader is actually on. It used to say "Company & invoice settings" above the
+// payment-method form, which edits neither.
+const MODULE_COPY: Record<BillingModule, { icon: typeof Building2; heading: string; blurb: string; save: string }> = {
+  company: {
+    icon: Building2,
+    heading: "Company profile",
+    blurb: "These details head every invoice and contract you send.",
+    save: "Save company profile",
+  },
+  invoicing: {
+    icon: FileText,
+    heading: "Invoice defaults",
+    blurb: "Numbering and the wording new invoices start from. Finalized invoices keep their own snapshot.",
+    save: "Save invoice defaults",
+  },
+  payments: {
+    icon: WalletCards,
+    heading: "Payment methods",
+    blurb: "Which methods customers can pay with, and the recipient details shown beside each one.",
+    save: "Save payment methods",
+  },
+};
+
+// Fallback for the combined view, which no route renders today.
+const ALL_MODULES = {
+  icon: Building2,
+  heading: "Company & invoice settings",
+  blurb: "These defaults flow into contracts and invoices. Finalized invoices keep snapshots.",
+  save: "Save billing settings",
+};
+
 // Each settings module is its own page, so the component renders one
 // section at a time. It still loads and saves the whole settings record:
 // saveAppSettings only writes the columns it is given.
 export function BillingSettings({ only }: { only?: BillingModule }) {
   const show = (module: BillingModule) => !only || only === module;
+  const copy = only ? MODULE_COPY[only] : ALL_MODULES;
+  const ModuleIcon = copy.icon;
   // These are payment-recipient details, so the API reserves them for
   // superadmins. Rendering the panel to a member would only show a 403.
   const isSuperadmin = useAuth().user.role === "superadmin";
@@ -54,10 +88,15 @@ export function BillingSettings({ only }: { only?: BillingModule }) {
   }
   async function save(event: FormEvent) {
     event.preventDefault(); if (!value) return;
-    if (!value.company_name.trim()) return setMessage("Company name is required.");
-    if (value.default_due_days < 0 || value.next_invoice_number < 1) return setMessage("Check due days and next invoice number.");
-    if (value.omt_enabled && (!value.omt_recipient_name?.trim() || !value.omt_phone?.trim())) return setMessage("OMT recipient and phone are required while OMT is enabled.");
-    if (value.whish_enabled && (!value.whish_recipient_name?.trim() || !value.whish_phone?.trim())) return setMessage("Whish recipient and phone are required while Whish is enabled.");
+    // Only validate what this page can edit. Checking every module meant the
+    // company page refused to save because of an empty OMT recipient - a field
+    // on the payments page, which the person looking at the error cannot see.
+    // show() is true for every module when there is no `only`, so the combined
+    // view still validates the lot.
+    if (show("company") && !value.company_name.trim()) return setMessage("Company name is required.");
+    if (show("invoicing") && (value.default_due_days < 0 || value.next_invoice_number < 1)) return setMessage("Check due days and next invoice number.");
+    if (show("payments") && value.omt_enabled && (!value.omt_recipient_name?.trim() || !value.omt_phone?.trim())) return setMessage("OMT recipient and phone are required while OMT is enabled.");
+    if (show("payments") && value.whish_enabled && (!value.whish_recipient_name?.trim() || !value.whish_phone?.trim())) return setMessage("Whish recipient and phone are required while Whish is enabled.");
     setBusy(true); setMessage("");
     try { await apiFetch("/api/billing/settings", { method: "PATCH", ...jsonBody(value) }); setMessage("Billing settings saved."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Settings could not be saved."); }
@@ -68,7 +107,7 @@ export function BillingSettings({ only }: { only?: BillingModule }) {
   const text = (key: keyof AppSettings, label: string, type = "text") => <label className="field"><span>{label}</span><input type={type} value={String(value[key] ?? "")} onChange={(e) => set(key, e.target.value as never)} /></label>;
   const area = (key: keyof AppSettings, label: string) => <label className="field span-2"><span>{label}</span><textarea rows={3} value={String(value[key] ?? "")} onChange={(e) => set(key, e.target.value as never)} /></label>;
   return <form className="billing-settings" onSubmit={save}>
-    <header className="settings-intro billing-settings-intro"><span><Building2 size={19}/></span><div><p className="eyebrow">Billing foundation</p><h2>Company & invoice settings</h2><p>These defaults flow into contracts and invoices. Finalized invoices keep snapshots.</p></div><button className="button button-primary" disabled={busy}>Save billing settings</button></header>
+    <header className="settings-intro billing-settings-intro"><span><ModuleIcon size={19}/></span><div><p className="eyebrow">Billing foundation</p><h2>{copy.heading}</h2><p>{copy.blurb}</p></div><button className="button button-primary" disabled={busy}>{copy.save}</button></header>
     <div className="billing-settings-grid">
       {show("company") && (<section className="settings-card"><div className="section-heading"><div><p className="eyebrow"><Building2 size={14}/> Company profile</p><h3>Shown on invoices</h3></div></div><div className="form-grid">
         {text("company_name","Company name")}{text("company_tagline","Tagline")}{text("company_phone","Phone","tel")}{text("company_email","Email","email")}{text("company_website","Website","url")}
