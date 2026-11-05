@@ -9,7 +9,7 @@ export const LICENSE_API_BASE_PATH = "/api/license/v1";
 // Mirrors lib/auth/license-token.ts. Duplicated rather than imported for the
 // reason above; license-discovery.test.ts reads that file and fails if the
 // two drift.
-const ISSUER = "threwlines";
+const ISSUER = "nosterys";
 const ALGORITHM = "ES256";
 
 export type LicenseDiscovery = {
@@ -26,7 +26,7 @@ export type LicenseDiscovery = {
 export function licenseDiscovery(): LicenseDiscovery {
   return {
     ok: true,
-    service: "threwlines-licensing",
+    service: "nosterys-licensing",
     api_version: "v1",
     base_path: LICENSE_API_BASE_PATH,
     endpoints: {

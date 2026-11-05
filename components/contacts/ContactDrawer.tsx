@@ -134,11 +134,6 @@ export function ContactDrawer({
   useEffect(() => {
     void loadFeeds();
   }, [loadFeeds]);
-  useEffect(() => {
-    const refreshBilling = () => void loadFeeds();
-    window.addEventListener("threwlines:billing-changed", refreshBilling);
-    return () => window.removeEventListener("threwlines:billing-changed", refreshBilling);
-  }, [loadFeeds]);
   const dialogRef = useDialogFocus<HTMLElement>(onClose);
 
   const links = useMemo(

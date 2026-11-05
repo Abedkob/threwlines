@@ -1,4 +1,4 @@
-/* Immersive threwlines access screen. */
+/* Immersive Vault access screen. */
 .login-page {
   position: relative;
   isolation: isolate;
@@ -7,11 +7,11 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 100dvh;
   overflow: hidden;
-  color: #f7f8fb;
+  color: #faf8f5;
   background:
-    radial-gradient(ellipse at 68% 12%, rgba(185, 255, 0, 0.085), transparent 32%),
-    radial-gradient(ellipse at 22% 85%, rgba(70, 88, 190, 0.08), transparent 31%),
-    #0b0d11;
+    radial-gradient(ellipse at 68% 12%, rgba(200, 162, 74, 0.085), transparent 32%),
+    radial-gradient(ellipse at 22% 85%, rgba(70, 136, 190, 0.08), transparent 31%),
+    #0e0b09;
 }
 
 .login-page::before {
@@ -36,7 +36,7 @@
   bottom: 0;
   left: 0;
   width: 3px;
-  background: linear-gradient(180deg, #b9ff00 0 21%, #313744 21% 78%, #5266ca 78% 100%);
+  background: linear-gradient(180deg, #c8a24a 0 21%, #313b44 21% 78%, #5294ca 78% 100%);
 }
 
 .login-ambient-wave {
@@ -47,7 +47,7 @@
 }
 
 .login-ambient-wave .document-wave-surface {
-  fill: #b9ff00;
+  fill: #c8a24a;
   opacity: 0.075;
 }
 
@@ -57,12 +57,12 @@
 }
 
 .login-ambient-wave .document-wave-contour {
-  stroke: #b9ff00;
+  stroke: #c8a24a;
   opacity: 0.22;
 }
 
 .login-ambient-wave .document-wave-signal {
-  stroke: #b9ff00;
+  stroke: #c8a24a;
   opacity: 0.1;
 }
 
@@ -114,7 +114,7 @@
 }
 
 .login-brand-copy small {
-  color: #717a89;
+  color: #717e89;
   font: 600 6px "JetBrains Mono", monospace;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -126,8 +126,8 @@
   gap: 10px;
   min-width: 185px;
   padding: 9px 12px;
-  color: #c3c8d1;
-  background: rgba(24, 28, 36, 0.76);
+  color: #cfc6b8;
+  background: rgba(30, 26, 22, 0.76);
   border: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: 10px;
   backdrop-filter: blur(12px);
@@ -152,7 +152,7 @@
 }
 
 .login-system-status small {
-  color: #6e7786;
+  color: #6e7b86;
   font-size: 6px;
 }
 
@@ -186,20 +186,20 @@
   align-items: center;
   gap: 10px;
   width: min(100%, 520px);
-  color: #777f8d;
+  color: #77838d;
   font: 600 7px "JetBrains Mono", monospace;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
 .login-coordinate > span {
-  color: #b9ff00;
+  color: #c8a24a;
 }
 
 .login-coordinate > i {
   width: 36px;
   height: 1px;
-  background: #353b46;
+  background: #353e46;
 }
 
 .login-copy {
@@ -207,19 +207,19 @@
 }
 
 .login-copy .eyebrow {
-  color: #798190;
+  color: #798690;
 }
 
 .login-copy h1 {
   max-width: 760px;
   margin: 17px 0 24px;
-  color: #f7f8fb;
+  color: #faf8f5;
   font: 600 clamp(47px, 5.5vw, 84px) / 0.94 "Space Grotesk", sans-serif;
   letter-spacing: -0.067em;
 }
 
 .login-copy h1 em {
-  color: #b9ff00;
+  color: #c8a24a;
   font-weight: 500;
   font-style: italic;
 }
@@ -227,7 +227,7 @@
 .login-copy > p:last-child {
   max-width: 540px;
   margin: 0;
-  color: #8b93a1;
+  color: #8b97a1;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -257,17 +257,17 @@
 }
 
 .login-workspace-map small {
-  color: #b9ff00;
+  color: #c8a24a;
   font: 600 6px "JetBrains Mono", monospace;
 }
 
 .login-workspace-map strong {
-  color: #dce0e7;
+  color: #e5dfd5;
   font-size: 9px;
 }
 
 .login-workspace-map em {
-  color: #616a78;
+  color: #616e78;
   font-size: 7px;
   font-style: normal;
 }
@@ -282,11 +282,11 @@
   width: min(100%, 455px);
   padding: clamp(28px, 3.5vw, 42px);
   overflow: hidden;
-  color: #242a34;
-  background: rgba(249, 250, 252, 0.97);
+  color: #242d34;
+  background: rgba(251, 250, 248, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 18px;
-  box-shadow: 0 38px 100px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(19, 23, 31, 0.18);
+  box-shadow: 0 38px 100px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(23, 20, 16, 0.18);
   backdrop-filter: blur(18px);
 }
 
@@ -297,7 +297,7 @@
   right: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(90deg, #b9ff00 0 24%, #151a22 24% 100%);
+  background: linear-gradient(90deg, #c8a24a 0 24%, #1b1713 24% 100%);
 }
 
 .login-form::after {
@@ -307,8 +307,8 @@
   top: -110px;
   width: 210px;
   height: 250px;
-  background: rgba(185, 255, 0, 0.06);
-  border-left: 1px solid rgba(130, 174, 13, 0.16);
+  background: rgba(200, 162, 74, 0.06);
+  border-left: 1px solid rgba(200, 162, 74, 0.16);
   border-radius: 65% 0 0 50%;
   transform: rotate(12deg);
   pointer-events: none;
@@ -325,7 +325,7 @@
   align-items: center;
   gap: 12px;
   padding-bottom: 22px;
-  border-bottom: 1px solid #e0e4e9;
+  border-bottom: 1px solid #e8e3d9;
 }
 
 .login-lock {
@@ -334,19 +334,19 @@
   width: 43px;
   height: 43px;
   margin: 0;
-  color: #10151b;
-  background: #b9ff00;
+  color: #15120f;
+  background: #c8a24a;
   border-radius: 10px;
-  box-shadow: 0 7px 18px rgba(148, 198, 15, 0.18);
+  box-shadow: 0 7px 18px rgba(200, 162, 74, 0.18);
 }
 
 .login-form-header .eyebrow {
-  color: #8b929d;
+  color: #8b959d;
 }
 
 .login-form h2 {
   margin: 3px 0 0;
-  color: #262c36;
+  color: #262f36;
   font: 600 25px "Space Grotesk", sans-serif;
   letter-spacing: -0.045em;
 }
@@ -354,14 +354,14 @@
 .login-form-code {
   align-self: start;
   padding-top: 3px;
-  color: #a0a6af;
+  color: #a0a8af;
   font: 600 6px "JetBrains Mono", monospace;
   letter-spacing: 0.08em;
 }
 
 .login-form .form-intro {
   margin: 20px 0 24px;
-  color: #7c8490;
+  color: #7c8790;
   font-size: 9px;
   line-height: 1.55;
 }
@@ -400,7 +400,7 @@
 }
 
 .login-field > span:first-child {
-  color: #4d5561;
+  color: #4d5861;
   font-size: 9px;
   font-weight: 600;
 }
@@ -412,18 +412,18 @@
   gap: 8px;
   min-height: 49px;
   padding: 0 13px;
-  color: #9098a4;
+  color: #909ba4;
   background: #fff;
-  border: 1px solid #d9dde4;
+  border: 1px solid #e3dcd1;
   border-radius: 9px;
   transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
 .login-input-shell:focus-within {
-  color: #5262bd;
+  color: #528dbd;
   background: #fff;
-  border-color: #9da9e8;
-  box-shadow: 0 0 0 3px rgba(74, 94, 198, 0.1);
+  border-color: #9dc6e8;
+  box-shadow: 0 0 0 3px rgba(74, 142, 198, 0.1);
 }
 
 .login-input-shell:has(input:focus-visible) {
@@ -439,7 +439,7 @@
   width: 100%;
   height: 47px;
   padding: 0;
-  color: #252b35;
+  color: #252e35;
   background: transparent;
   border: 0;
   outline: 0;
@@ -447,7 +447,7 @@
 }
 
 .login-input-shell input::placeholder {
-  color: #adb3bc;
+  color: #adb5bc;
 }
 
 .login-password-shell {
@@ -461,7 +461,7 @@
   width: 32px;
   height: 32px;
   padding: 0;
-  color: #8b929d;
+  color: #8b959d;
   background: transparent;
   border: 0;
   border-radius: 7px;
@@ -469,8 +469,8 @@
 }
 
 .login-password-shell > button:hover {
-  color: #4d5664;
-  background: #f1f3f6;
+  color: #4d5a64;
+  background: #f5f2ed;
 }
 
 .login-feedback {
@@ -497,9 +497,9 @@
   width: 100%;
   min-height: 58px;
   padding: 10px 14px 10px 16px;
-  color: #f8f9fb;
-  background: #151a22;
-  border: 1px solid #151a22;
+  color: #faf9f6;
+  background: #1b1713;
+  border: 1px solid #1b1713;
   border-radius: 10px;
   text-align: left;
   cursor: pointer;
@@ -514,18 +514,18 @@
 }
 
 .login-submit small {
-  color: #7c8594;
+  color: #7c8994;
   font-size: 7px;
   font-weight: 400;
 }
 
 .login-submit > svg {
-  color: #b9ff00;
+  color: #c8a24a;
 }
 
 .login-submit:hover:not(:disabled) {
-  background: #1d232d;
-  box-shadow: 0 12px 25px rgba(16, 20, 28, 0.16);
+  background: #1d262d;
+  box-shadow: 0 12px 25px rgba(21, 18, 15, 0.16);
   transform: translateY(-1px);
 }
 
@@ -535,7 +535,7 @@
 }
 
 .login-spinner {
-  color: #b9ff00;
+  color: #c8a24a;
   animation: login-spin 0.8s linear infinite;
 }
 
@@ -545,7 +545,7 @@
   justify-content: space-between;
   gap: 12px;
   padding-top: 17px;
-  color: #9ba1ab;
+  color: #9ba4ab;
   font: 600 6px "JetBrains Mono", monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -555,7 +555,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #6e7784;
+  color: #6e7a84;
 }
 
 .login-form-footer svg {
@@ -568,7 +568,7 @@
   align-items: center;
   min-height: 54px;
   padding: 14px clamp(26px, 4vw, 64px);
-  color: #535c6a;
+  color: #53606a;
   border-top: 1px solid rgba(255, 255, 255, 0.065);
   font: 600 6px "JetBrains Mono", monospace;
   letter-spacing: 0.12em;

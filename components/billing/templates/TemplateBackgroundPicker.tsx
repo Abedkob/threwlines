@@ -1,4 +1,5 @@
 import { Check, FileText, Waves } from "lucide-react";
+import { WAVE_BACKGROUND } from "@/lib/template-background";
 import type { TemplateBackgroundStyle } from "@/types/db";
 
 type Props = {
@@ -19,7 +20,7 @@ const choices: Array<{
     icon: FileText,
   },
   {
-    value: "threwlines-wave",
+    value: WAVE_BACKGROUND,
     label: "Signature wave",
     description: "A print-safe lime ribbon inspired by the official site.",
     icon: Waves,

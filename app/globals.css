@@ -18,16 +18,16 @@
 
 :root {
   /* Color tokens: values mirror lib/design-tokens.ts (checked by its test). */
-  --ink: #14171F;
-  --canvas: #F5F7FA;
+  --ink: #1A1714;
+  --canvas: #F6F3EE;
   --surface: #FFFFFF;
-  --line: #DFE3EB;
-  --text: #20232C;
-  --muted: #5F6673;
-  --primary: #3449E0;
-  --primary-pressed: #2537B8;
-  --primary-wash: #ECEFFE;
-  --accent-line: #B9FF00;
+  --line: #E3DCD1;
+  --text: #221E19;
+  --muted: #6A6258;
+  --primary: #19609A;
+  --primary-pressed: #134B78;
+  --primary-wash: #E7F1F9;
+  --accent-line: #C8A24A;
   --success: #15775B;
   --warning: #9A5B00;
   --danger: #C0352A;
@@ -37,12 +37,12 @@
   --danger-fill: #D85252;
 
   /* Lifecycle ramp */
-  --ramp-1: #ECEFFE;
-  --ramp-2: #C3CBFA;
-  --ramp-3: #8EA0FF;
-  --ramp-4: #5467E8;
-  --ramp-5: #3449E0;
-  --ramp-6: #2537B8;
+  --ramp-1: #E7F1F9;
+  --ramp-2: #BAD3E8;
+  --ramp-3: #6AAFE7;
+  --ramp-4: #2283D3;
+  --ramp-5: #19609A;
+  --ramp-6: #134B78;
 
   /* Spacing scale (4px steps) */
   --space-1: 4px;
@@ -67,12 +67,12 @@
   --brand: var(--primary);
   --brand-dark: var(--primary-pressed);
   --brand-soft: var(--primary-wash);
-  --vault-lime: var(--accent-line);
+  --vault-brass: var(--accent-line);
   --attention: var(--warning-fill);
 
   /* Legacy-only shades with no token yet; literal values preserved. */
-  --line-soft: #eaedf2;
-  --muted-2: #9aa1ad;
+  --line-soft: #EFEAE1;
+  --muted-2: #A09788;
 
   /* The redesign's radius scale: two values, 6px on controls and 10px on surfaces. The three
      legacy radii below are the old scale and are retired with the sheets that use them. */
@@ -81,7 +81,7 @@
   --radius-sm: 7px;
   --radius: 11px;
   --radius-lg: 18px;
-  --shadow: 0 16px 45px rgba(25, 31, 48, 0.08);
+  --shadow: 0 16px 45px rgba(42, 34, 24, 0.10);
   /* Shell geometry. These are the single source: the legacy sheets must not redeclare them on
      a root-scoped selector, because a declaration inside layer(legacy) can never win here. */
   --sidebar-width: 248px;

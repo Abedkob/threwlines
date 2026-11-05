@@ -21,7 +21,7 @@ export default async function ProtectedLayout({
     id: session.userId,
     email: session.email,
     name: profile.name ?? (session.email ? session.email.split("@")[0] : "Team member"),
-    color: profile.color ?? "#3D5AF1",
+    color: profile.color ?? "#19609A",
     role: profile.app_role === "superadmin" ? ("superadmin" as const) : ("member" as const),
   };
 

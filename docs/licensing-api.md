@@ -1,4 +1,4 @@
-# threwlines Licensing API
+# Nosterys Vault Licensing API
 
 The licensing API is served by the Next.js route handlers under `/api/license/v1/`, backed by the local PostgreSQL database. Its database credential and signing private key remain server-side.
 

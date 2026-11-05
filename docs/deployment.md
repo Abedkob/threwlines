@@ -7,14 +7,14 @@ This runbook assumes you already have a Dokploy instance reachable from a browse
 In Dokploy → your project → **Create → Database → Postgres**.
 
 - Image: `postgres:16-alpine` (or newer)
-- Database name: `threwlines`
-- User / password: whatever you like; Dokploy will show you the credentials and the in-cluster hostname (e.g. `threwlines-db`).
+- Database name: `nosterys_vault`
+- User / password: whatever you like; Dokploy will show you the credentials and the in-cluster hostname (e.g. `nosterys-db`).
 - Volume: enable the data volume (default `/var/lib/postgresql/data`).
 
 Copy the connection string Dokploy prints. It looks like:
 
 ```
-postgres://vault:<password>@threwlines-db:5432/threwlines
+postgres://vault:<password>@nosterys-db:5432/nosterys_vault
 ```
 
 ## 2. Create the application
@@ -51,16 +51,16 @@ Dokploy → the application → **Volumes** → add a bind or named volume at `/
 
 ## 5. Point your private DNS at Dokploy
 
-In Dokploy → the application → **Domains** → add `vault.yourcompany.internal` (or whatever name you want). Dokploy will:
+In Dokploy → the application → **Domains** → add `vault.nosterys.com` (or whatever name you want). Dokploy will:
 
 - Configure Traefik to route that host to the app.
 - Issue a Let's Encrypt cert if the DNS record is reachable publicly, OR issue nothing and expect you to supply one for LAN-only DNS.
 
-In your DNS server (ActiveDirectory, Pi-hole, Unbound, router, …) create an **A** record for `vault.yourcompany.internal` → the Dokploy host's IP. Confirm with:
+In your DNS server (ActiveDirectory, Pi-hole, Unbound, router, …) create an **A** record for `vault.nosterys.com` → the Dokploy host's IP. Confirm with:
 
 ```bash
-dig vault.yourcompany.internal
-curl -I https://vault.yourcompany.internal/api/health
+dig vault.nosterys.com
+curl -I https://vault.nosterys.com/api/health
 ```
 
 For LAN-only HTTPS: either accept the self-signed cert Traefik generates, or use a split-horizon DNS where the private name resolves publicly for ACME and privately for actual traffic.
@@ -77,14 +77,14 @@ That applies `scripts/local-schema.sql` and `scripts/local-seed.sql`. The script
 
 ## 7. Change the seeded admin password
 
-The seed creates `admin@threwlines.local` with password `vault-dev-2026`. **Do this before anyone else gets the URL.**
+The seed creates `admin@nosterys.local` with password `vault-dev-2026`. **Do this before anyone else gets the URL.**
 
 There is no change-password screen yet, so this is the only way — run it against the Postgres service once:
 
 ```sql
 update profiles
 set password_hash = crypt('<new-strong-password>', gen_salt('bf', 12))
-where email = 'admin@threwlines.local';
+where email = 'admin@nosterys.local';
 ```
 
 (Requires the `pgcrypto` extension, which `local-schema.sql` already enables.)
@@ -93,10 +93,10 @@ Repeat for each of the other two team members once you have created them.
 
 ## 8. Verify
 
-- `curl https://vault.yourcompany.internal/api/health` → `{"ok":true}`
-- Browser: `https://vault.yourcompany.internal/login` → login page
+- `curl https://vault.nosterys.com/api/health` → `{"ok":true}`
+- Browser: `https://vault.nosterys.com/login` → login page
 - Sign in → dashboard renders with real data
-- `curl https://vault.yourcompany.internal/api/license/v1/.well-known/jwks.json` → 200 with the public key
+- `curl https://vault.nosterys.com/api/license/v1/.well-known/jwks.json` → 200 with the public key
 
 ## 9. Ongoing
 
@@ -109,7 +109,7 @@ Repeat for each of the other two team members once you have created them.
 ## 10. Moving to a different domain
 
 Nothing in the server is bound to a hostname. Licence tokens are signed with
-`iss: threwlines` and verified against `LICENSE_SIGNING_PUBLIC_JWK`, not against
+`iss: nosterys` (tokens issued before the rename carry `iss: threwlines` and are still accepted) and verified against `LICENSE_SIGNING_PUBLIC_JWK`, not against
 the URL, so **every licence already activated in the field keeps working** — a
 client that re-points at the new host and calls `validate` with its stored token
 gets a fresh token back. No re-activation, no activation slots consumed, no keys

@@ -1,19 +1,19 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "ThrewLines Licensing API",
+    "title": "Nosterys Vault Licensing API",
     "version": "1.0.0",
     "summary": "Activate, validate and deactivate product licences.",
-    "description": "Public API for applications that ship under a ThrewLines licence.\n\n## Integrating\n\nFive steps. Steps 1 and 2 run once per installation; step 3 is the steady state.\n\n**1. Configure one value: the origin.** Store the deployment's scheme and host only - `https://licences.example.com` - with no path and no trailing slash. Read `GET /api/license/v1` once at startup for the path of every endpoint, confirm `service` is `threwlines-licensing` and `api_version` is the version you built against, then resolve each `endpoints` value against your origin. Written this way a client needs no change when the API moves to another domain.\n\n**2. Mint an installation id, persist it, then activate.** Generate a UUID the first time the application runs and **write it to disk**. It identifies this installation for the life of the install. Send it with the licence key and product code to `endpoints.activate`. Re-activating with the same `installation_id` is idempotent and consumes no extra slot; a value that changes between launches consumes a new slot every launch, and the licence hits `ACTIVATION_LIMIT_REACHED` once `max_activations` is reached. This is the most common integration fault.\n\n**3. Store the token and verify it offline.** Keep `activation_token`, `check_after` and `offline_grace_until`. On each launch verify the token locally against the key set at `endpoints.jwks` rather than calling the API - that is the intended steady state. Fetch the key set once and cache it; keys are not rotated, because rotating would invalidate every licence already in the field. Pin the issuer and algorithm from the discovery document (`token.issuer`, `token.algorithm`); never take `alg` from the token header.\n\n**4. Re-validate when the token says to.** Once the clock passes `check_after`, send the token to `endpoints.validate` to get a fresh one. `endpoints.heartbeat` is the same handler under the name older clients use - call either, not both. If the call fails for any transport reason, keep the token you already hold and carry on until `offline_grace_until`.\n\n**5. Deactivate when the user uninstalls or changes machine.** Send the token to `endpoints.deactivate` to release the slot. Without this, a user who reinstalls repeatedly exhausts the licence.\n\n## What to persist\n\n| Value | Where | Why |\n| --- | --- | --- |\n| `installation_id` | Disk, written once, never regenerated | A new value consumes an activation slot |\n| `activation_token` | Disk | Lets the application start while offline |\n| `check_after` | Alongside the token | When to call `validate` again |\n| `offline_grace_until` | Alongside the token | How long to keep working when the API is unreachable |\n\nAfter activation the application runs on the token, so there is no need to keep the licence key in plaintext next to it.\n\n## Casing\n\nLicence keys are accepted in any case and with surrounding whitespace, because they are typed and read aloud: `tl-abedz-...` and `TL-ABEDZ-...` are the same key. Product codes are stored lower-case, so a product registered as `Abedz` comes back as `abedz` in `product_code` and in the token's `aud` claim. Compare both case-insensitively rather than against your configured spelling.\n\n## Reference notes\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate`, `heartbeat` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token. Discovery and the key set need no credential at all.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable. A transport failure, a non-JSON body or an HTML error page is **not** a licence verdict - only a JSON body carrying `ok: false` is.\n\n**Retrying.** `RATE_LIMITED` is the only code worth retrying on its own: back off and try later. `INVALID_REQUEST` means the payload is wrong and will keep failing. Everything else is a decision about the licence itself and belongs in front of the user.\n\n**Timestamps.** Response fields `check_after` and `offline_grace_until` are ISO 8601 strings. The matching claims inside the token are Unix seconds. They describe the same instants in two representations.\n\n**If you build paths by hand.** The server URL above already ends in `/api/license/v1`, so append only `licenses/activate` and friends. A path that repeats the version segment, or carries a leading slash, produces a URL this API does not serve and returns an HTML error page rather than a JSON failure."
+    "description": "Public API for applications that ship under a Nosterys Vault licence.\n\n## Integrating\n\nFive steps. Steps 1 and 2 run once per installation; step 3 is the steady state.\n\n**1. Configure one value: the origin.** Store the deployment's scheme and host only - `https://licences.example.com` - with no path and no trailing slash. Read `GET /api/license/v1` once at startup for the path of every endpoint, confirm `service` is `nosterys-licensing` and `api_version` is the version you built against, then resolve each `endpoints` value against your origin. Written this way a client needs no change when the API moves to another domain.\n\n**2. Mint an installation id, persist it, then activate.** Generate a UUID the first time the application runs and **write it to disk**. It identifies this installation for the life of the install. Send it with the licence key and product code to `endpoints.activate`. Re-activating with the same `installation_id` is idempotent and consumes no extra slot; a value that changes between launches consumes a new slot every launch, and the licence hits `ACTIVATION_LIMIT_REACHED` once `max_activations` is reached. This is the most common integration fault.\n\n**3. Store the token and verify it offline.** Keep `activation_token`, `check_after` and `offline_grace_until`. On each launch verify the token locally against the key set at `endpoints.jwks` rather than calling the API - that is the intended steady state. Fetch the key set once and cache it; keys are not rotated, because rotating would invalidate every licence already in the field. Pin the issuer and algorithm from the discovery document (`token.issuer`, `token.algorithm`); never take `alg` from the token header.\n\n**4. Re-validate when the token says to.** Once the clock passes `check_after`, send the token to `endpoints.validate` to get a fresh one. `endpoints.heartbeat` is the same handler under the name older clients use - call either, not both. If the call fails for any transport reason, keep the token you already hold and carry on until `offline_grace_until`.\n\n**5. Deactivate when the user uninstalls or changes machine.** Send the token to `endpoints.deactivate` to release the slot. Without this, a user who reinstalls repeatedly exhausts the licence.\n\n## What to persist\n\n| Value | Where | Why |\n| --- | --- | --- |\n| `installation_id` | Disk, written once, never regenerated | A new value consumes an activation slot |\n| `activation_token` | Disk | Lets the application start while offline |\n| `check_after` | Alongside the token | When to call `validate` again |\n| `offline_grace_until` | Alongside the token | How long to keep working when the API is unreachable |\n\nAfter activation the application runs on the token, so there is no need to keep the licence key in plaintext next to it.\n\n## Casing\n\nLicence keys are accepted in any case and with surrounding whitespace, because they are typed and read aloud: `tl-abedz-...` and `TL-ABEDZ-...` are the same key. Product codes are stored lower-case, so a product registered as `Abedz` comes back as `abedz` in `product_code` and in the token's `aud` claim. Compare both case-insensitively rather than against your configured spelling.\n\n## Reference notes\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate`, `heartbeat` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token. Discovery and the key set need no credential at all.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable. A transport failure, a non-JSON body or an HTML error page is **not** a licence verdict - only a JSON body carrying `ok: false` is.\n\n**Retrying.** `RATE_LIMITED` is the only code worth retrying on its own: back off and try later. `INVALID_REQUEST` means the payload is wrong and will keep failing. Everything else is a decision about the licence itself and belongs in front of the user.\n\n**Timestamps.** Response fields `check_after` and `offline_grace_until` are ISO 8601 strings. The matching claims inside the token are Unix seconds. They describe the same instants in two representations.\n\n**If you build paths by hand.** The server URL above already ends in `/api/license/v1`, so append only `licenses/activate` and friends. A path that repeats the version segment, or carries a leading slash, produces a URL this API does not serve and returns an HTML error page rather than a JSON failure."
   },
   "servers": [
     {
       "url": "https://{host}/api/license/v1",
-      "description": "Your ThrewLines deployment",
+      "description": "Your Nosterys Vault deployment",
       "variables": {
         "host": {
-          "default": "threwlines.example.com",
-          "description": "The host your ThrewLines instance is served from"
+          "default": "vault.nosterys.com",
+          "description": "The host your Vault instance is served from"
         }
       }
     }
@@ -38,7 +38,7 @@
                 "schema": { "$ref": "#/components/schemas/Discovery" },
                 "example": {
                   "ok": true,
-                  "service": "threwlines-licensing",
+                  "service": "nosterys-licensing",
                   "api_version": "v1",
                   "base_path": "/api/license/v1",
                   "endpoints": {
@@ -48,7 +48,7 @@
                     "deactivate": "/api/license/v1/licenses/deactivate",
                     "jwks": "/api/license/v1/.well-known/jwks.json"
                   },
-                  "token": { "issuer": "threwlines", "algorithm": "ES256" },
+                  "token": { "issuer": "nosterys", "algorithm": "ES256" },
                   "spec": "/licensing-openapi.json",
                   "documentation": "/licensing-docs.html"
                 }
@@ -214,7 +214,7 @@
         "required": ["ok", "service", "api_version", "base_path", "endpoints", "token"],
         "properties": {
           "ok": { "type": "boolean", "const": true },
-          "service": { "type": "string", "const": "threwlines-licensing", "description": "Identifies the host as a ThrewLines licensing deployment. Check this before trusting the rest of the document." },
+          "service": { "type": "string", "const": "nosterys-licensing", "description": "Identifies the host as a Nosterys Vault licensing deployment. Check this before trusting the rest of the document." },
           "api_version": { "type": "string", "description": "The version segment of `base_path`. A client built for one major version should refuse to continue if this is not the version it expects." },
           "base_path": { "type": "string", "description": "Where the API is mounted beneath the origin. Already present at the start of every endpoint path - it is given separately for display and version checks, not for you to join." },
           "endpoints": {
@@ -248,7 +248,7 @@
         "properties": {
           "license_key": {
             "type": "string",
-            "pattern": "^TL-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$",
+            "pattern": "^(?:NV|TL)-[A-Z0-9]+(?:-[A-Z0-9]{5}){4,10}$",
             "description": "The key issued to the customer. Shown once at issue time and never recoverable: only its digest is stored. Leading and trailing whitespace is stripped and the key is upper-cased before matching, so case does not affect validity; the pattern describes the canonical form."
           },
           "installation_id": {
@@ -386,7 +386,7 @@
                 "crv": { "type": "string" },
                 "x": { "type": "string" },
                 "y": { "type": "string" },
-                "kid": { "type": "string", "description": "Key id. Match the token header's kid against this to choose the verifying key; a ThrewLines deployment currently publishes one key, threwlines-license-1." },
+                "kid": { "type": "string", "description": "Key id. Match the token header's kid against this to choose the verifying key. A deployment publishes one key and does not rotate it, because rotating would invalidate every licence already in the field - so treat the value as an opaque identifier and do not parse it. It was not changed when the product was renamed, for the same reason." },
                 "alg": { "type": "string" },
                 "use": { "type": "string" }
               }
@@ -398,7 +398,7 @@
         "type": "object",
         "description": "The decoded payload of an activation_token. It contains no host, domain or URL, so moving your deployment to another domain does not invalidate issued licences.",
         "properties": {
-          "iss": { "type": "string", "const": "threwlines" },
+          "iss": { "type": "string", "const": "nosterys", "description": "Tokens issued before the product was renamed carry \"threwlines\" instead. Both are accepted by this server; a pre-rename token is replaced with a current one at its next validate." },
           "aud": { "type": "string", "description": "The product code as stored, always lower-case - so a product registered as \"Abedz\" gives aud \"abedz\". Compare case-insensitively rather than against your configured value." },
           "sub": { "type": "string", "format": "uuid", "description": "Licence id." },
           "aid": { "type": "string", "format": "uuid", "description": "Activation id." },

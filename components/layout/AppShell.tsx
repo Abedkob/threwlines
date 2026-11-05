@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, DATA_CHANGED_EVENT } from "@/lib/api/client";
 import type { NavigationCounts } from "@/types/db";
 
-const SIDEBAR_PREFERENCE = "threwlines:sidebar-collapsed";
+// Renamed with the brand. A returning user sees the sidebar at its default
+// width once, then their choice sticks again.
+const SIDEBAR_PREFERENCE = "nosterys:sidebar-collapsed";
 
 export function AppShell({
   children,
@@ -57,10 +59,10 @@ export function AppShell({
       }
     }
     void refreshBadges();
-    window.addEventListener("threwlines:data-changed", refreshBadges);
+    window.addEventListener(DATA_CHANGED_EVENT, refreshBadges);
     return () => {
       active = false;
-      window.removeEventListener("threwlines:data-changed", refreshBadges);
+      window.removeEventListener(DATA_CHANGED_EVENT, refreshBadges);
     };
   }, []);
 

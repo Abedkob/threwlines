@@ -240,7 +240,10 @@ export type AppSettings = {
   updated_at: string;
 };
 
-export type TemplateBackgroundStyle = "clean" | "threwlines-wave";
+// "threwlines-wave" is the pre-rename spelling, still present in templates
+// created before the rebrand and frozen into historical invoices. See
+// lib/template-background.ts.
+export type TemplateBackgroundStyle = "clean" | "signature-wave" | "threwlines-wave";
 
 export type TemplateConfig = {
   paperSize: "A4";

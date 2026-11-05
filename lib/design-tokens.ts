@@ -2,16 +2,16 @@
 // the "--" prefix; values are hex strings so contrastRatio can consume them.
 // Spacing and type scales live in app/globals.css only.
 export const TOKENS: Record<string, string> = {
-  ink: "#14171F",
-  canvas: "#F5F7FA",
+  ink: "#1A1714",
+  canvas: "#F6F3EE",
   surface: "#FFFFFF",
-  line: "#DFE3EB",
-  text: "#20232C",
-  muted: "#5F6673",
-  primary: "#3449E0",
-  "primary-pressed": "#2537B8",
-  "primary-wash": "#ECEFFE",
-  "accent-line": "#B9FF00",
+  line: "#E3DCD1",
+  text: "#221E19",
+  muted: "#6A6258",
+  primary: "#19609A",
+  "primary-pressed": "#134B78",
+  "primary-wash": "#E7F1F9",
+  "accent-line": "#C8A24A",
   // Text-safe status colors (>= 4.5:1 on surface and canvas) and the brighter
   // fill variants used for backgrounds, icons, chart bars and dark chrome.
   success: "#15775B",
@@ -23,12 +23,12 @@ export const TOKENS: Record<string, string> = {
   "success-fill": "#30866A",
   "warning-fill": "#E49A25",
   "danger-fill": "#D85252",
-  "ramp-1": "#ECEFFE",
-  "ramp-2": "#C3CBFA",
-  "ramp-3": "#8EA0FF",
-  "ramp-4": "#5467E8",
-  "ramp-5": "#3449E0",
-  "ramp-6": "#2537B8"
+  "ramp-1": "#E7F1F9",
+  "ramp-2": "#BAD3E8",
+  "ramp-3": "#6AAFE7",
+  "ramp-4": "#2283D3",
+  "ramp-5": "#19609A",
+  "ramp-6": "#134B78"
 };
 
 // Token pairs (foreground, background) that must clear WCAG AA (4.5:1) as text.

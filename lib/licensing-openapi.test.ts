@@ -150,7 +150,7 @@ test("the rendered docs page is public, pinned and integrity-checked", () => {
 
 test("the docs page degrades to something useful if the renderer fails", () => {
   const page = readFileSync("public/licensing-docs.html", "utf8");
-  assert.match(page, /tl-fallback/, "there must be fallback content inside the render target");
+  assert.match(page, /nv-fallback/, "there must be fallback content inside the render target");
   assert.match(page, /Download spec/, "the raw spec must be reachable without the renderer");
 });
 

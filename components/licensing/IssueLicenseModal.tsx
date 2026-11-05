@@ -85,7 +85,7 @@ export function IssueLicenseModal({ contacts, products, invoices, presetContactI
   if (issued) return (
     <div className="modal-layer licensing-modal-layer" role="presentation">
       <section ref={dialogRef} className="modal issued-license-modal" role="dialog" aria-modal="true" aria-labelledby="issued-license-title">
-        <div className="issued-license-success"><span><ShieldCheck size={25} /></span><p className="eyebrow">License issued</p><h2 id="issued-license-title">Copy this key now</h2><p>The complete key is shown once. ThrewLines stores only its cryptographic fingerprint.</p></div>
+        <div className="issued-license-success"><span><ShieldCheck size={25} /></span><p className="eyebrow">License issued</p><h2 id="issued-license-title">Copy this key now</h2><p>The complete key is shown once. Vault stores only its cryptographic fingerprint.</p></div>
         <div className="issued-license-key"><KeyRound size={16} /><code>{issued.license_key}</code></div>
         <div className="license-one-time-note"><strong>One-time secret</strong><span>Save it in the customer&apos;s secure delivery channel. It cannot be recovered later.</span></div>
         <footer className="modal-actions"><button className="button button-secondary" onClick={copyKey}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Copied" : "Copy license key"}</button><button className="button button-primary" onClick={onClose}>Done</button></footer>

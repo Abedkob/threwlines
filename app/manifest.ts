@@ -2,16 +2,16 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ThrewLines",
-    short_name: "ThrewLines",
+    name: "Nosterys Vault",
+    short_name: "Vault",
     description: "A private workspace for client relationships, work, billing, and spending.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#f5f6f8",
-    theme_color: "#171a23",
+    background_color: "#F6F3EE",
+    theme_color: "#1A1714",
     icons: [
       {
-        src: "/threwlines-mark.svg",
+        src: "/nosterys-mark.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",

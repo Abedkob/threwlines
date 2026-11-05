@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, LayoutTemplate, Plus } from "lucide-react";
 import type { CSSProperties } from "react";
+import { isWaveBackground } from "@/lib/template-background";
 import type { DocumentTemplate } from "@/types/db";
 
 export function InvoiceTemplateChooser({
@@ -25,7 +26,7 @@ export function InvoiceTemplateChooser({
         <div className="invoice-template-options">
           {templates.map((template) => {
             const selected = value === template.id;
-            const wave = template.config.backgroundStyle === "threwlines-wave";
+            const wave = isWaveBackground(template.config.backgroundStyle);
             return (
               <button
                 type="button"

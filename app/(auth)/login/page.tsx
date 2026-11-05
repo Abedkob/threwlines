@@ -57,11 +57,11 @@ export default function LoginPage() {
       <header className="login-topbar">
         <div className="login-brand">
           <span className="brand-logo-frame login-logo-frame p-1" aria-hidden="true">
-            <img src="/threwlines-bars.svg" alt="" className="scale-100 object-contain" />
+            <img src="/nosterys-sail.svg" alt="" className="scale-100 object-contain" />
           </span>
           <span className="login-brand-copy">
-            <strong>ThrewLines</strong>
-            <small>Internal operations</small>
+            <strong>Nosterys</strong>
+            <small>Vault</small>
           </span>
         </div>
       </header>
@@ -88,9 +88,9 @@ export default function LoginPage() {
               <div className="login-lock" aria-hidden="true"><KeyRound size={19} /></div>
               <div>
                 <p className="eyebrow">Authenticated access</p>
-                <h2>Sign in to ThrewLines</h2>
+                <h2>Sign in to Vault</h2>
               </div>
-              <span className="login-form-code">TL / 01</span>
+              <span className="login-form-code">NV / 01</span>
             </header>
 
             <p className="form-intro">Use the credentials assigned to this shared workspace.</p>
@@ -106,7 +106,7 @@ export default function LoginPage() {
                     inputMode="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="name@threwlines.com"
+                    placeholder="name@nosterys.com"
                     required
                     autoFocus
                   />
@@ -160,7 +160,7 @@ export default function LoginPage() {
 
       <footer className="login-page-footer">
         <span><i /> Shared operating view</span>
-        <span>THREWLINES / INTERNAL SYSTEM</span>
+        <span>NOSTERYS / VAULT</span>
         <span>BEIRUT · LB</span>
       </footer>
     </main>

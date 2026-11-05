@@ -1,6 +1,11 @@
 import { importJWK, SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-const ISSUER = "threwlines";
+const ISSUER = "nosterys";
+// Tokens issued before the rename carry "threwlines" and are still installed on
+// customer machines. Verification accepts both so the rebrand does not force
+// every client to re-activate; signing only ever uses ISSUER, so the old value
+// drains away as tokens refresh at check_after.
+const ACCEPTED_ISSUERS = ["nosterys", "threwlines"];
 const ALG = "ES256";
 
 export type LicenseTokenClaims = JWTPayload & {
@@ -91,7 +96,7 @@ export async function verifyLicenseToken(token: string, expectedAudience?: strin
   try {
     const { payload, protectedHeader } = await jwtVerify(token, key, {
       algorithms: [ALG],
-      issuer: ISSUER,
+      issuer: ACCEPTED_ISSUERS,
       audience: expectedAudience,
     });
     if (protectedHeader.alg !== ALG) throw new Error("TOKEN_INVALID");

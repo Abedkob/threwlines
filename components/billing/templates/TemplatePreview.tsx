@@ -1,5 +1,6 @@
 import { Eye } from "lucide-react";
 import { DocumentWave } from "@/components/billing/shared/DocumentWave";
+import { isWaveBackground } from "@/lib/template-background";
 import type { AppSettings, DocumentType, TemplateConfig } from "@/types/db";
 
 type Props = {
@@ -35,12 +36,12 @@ export function TemplatePreview({ config, documentType, templateName, appSetting
           "--invoice-font": config.fontFamily,
         } as React.CSSProperties}
       >
-        {backgroundStyle === "threwlines-wave" && (
+        {isWaveBackground(backgroundStyle) && (
           <DocumentWave className="template-preview-wave-art" />
         )}
 
         <div className="preview-registration-line">
-          <span>THREWLINES / DOCUMENT SYSTEM</span>
+          <span>NOSTERYS / DOCUMENT SYSTEM</span>
           <span>{documentType.toUpperCase()} — 01</span>
         </div>
 

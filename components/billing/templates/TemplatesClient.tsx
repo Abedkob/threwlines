@@ -24,13 +24,14 @@ import {
 import { TemplateBackgroundPicker } from "@/components/billing/templates/TemplateBackgroundPicker";
 import { TemplatePreview } from "@/components/billing/templates/TemplatePreview";
 import { apiFetch, assetUrl, jsonBody } from "@/lib/api/client";
+import { WAVE_BACKGROUND, isWaveBackground } from "@/lib/template-background";
 import type { AppSettings, DocumentTemplate, DocumentType, TemplateConfig } from "@/types/db";
 
 const base: TemplateConfig = {
   paperSize: "A4",
   orientation: "portrait",
   primaryColor: "#111827",
-  backgroundStyle: "threwlines-wave",
+  backgroundStyle: WAVE_BACKGROUND,
   fontFamily: "Arial",
   logoWidth: 180,
   stampWidth: 150,
@@ -230,7 +231,7 @@ export function TemplatesClient() {
             ) : rows.length === 0 ? (
               <div className="template-library-state"><FileText size={19} /><strong>No templates yet</strong><span>Create your first reusable document system.</span></div>
             ) : rows.map((row) => {
-              const wave = row.config.backgroundStyle === "threwlines-wave";
+              const wave = isWaveBackground(row.config.backgroundStyle);
               return (
                 <button
                   key={row.id}

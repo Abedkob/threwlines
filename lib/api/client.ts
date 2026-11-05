@@ -1,6 +1,6 @@
 import { invalidateBrowserQueries } from "@/lib/query-cache";
 
-export const DATA_CHANGED_EVENT = "threwlines:data-changed";
+export const DATA_CHANGED_EVENT = "nosterys:data-changed";
 
 export async function apiFetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {

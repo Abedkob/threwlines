@@ -38,8 +38,26 @@ test("the database hashes the same normalisation we apply", () => {
   );
 });
 
+test("both the current and the pre-rename prefix are accepted", () => {
+  // Keys issued as ThrewLines start TL-; keys issued as Nosterys Vault start
+  // NV-. Refusing TL- would invalidate every licence already with a customer,
+  // including printed and emailed copies.
+  assert.ok(accepts("NV-ABEDZ-7K2M4-9QX4B-820C0-47LDG"), "the current NV- prefix must be accepted");
+  assert.ok(accepts(CANONICAL), "the pre-rename TL- prefix must keep working");
+  assert.ok(accepts("nv-abedz-7k2m4-9qx4b-820c0-47ldg"), "case must not decide it for NV- either");
+});
+
+test("the accepted prefixes are exactly those two", () => {
+  // Keeps the compatibility alternation from drifting into a wildcard.
+  const source = readFileSync("lib/license-key.ts", "utf8");
+  const line = source.split("\n").find((text) => text.startsWith("export const LICENSE_KEY_RE"));
+  assert.ok(line, "could not find LICENSE_KEY_RE");
+  assert.match(line, /\(\?:NV\|TL\)/, "the pattern must name NV and TL and nothing else");
+});
+
 test("normalising does not widen what counts as a key", () => {
   assert.ok(!accepts("IDV-ABEDZ-7K2M4-9QX4B-820C0-47LDG"), "the superseded IDV- prefix stays invalid");
+  assert.ok(!accepts("XX-ABEDZ-7K2M4-9QX4B-820C0-47LDG"), "an unknown prefix stays invalid");
   assert.ok(!accepts("TL-ABEDZ-7K2M-9QX4B-820C0-47LDG"), "a four-character group stays invalid");
   assert.ok(!accepts("TL-ABEDZ-7K2M4-9QX4B"), "too few groups stays invalid");
   assert.ok(!accepts("TL-ABEDZ-7K2M4-9QX4B-820C0-47LD!"), "punctuation stays invalid");

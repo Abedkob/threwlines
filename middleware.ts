@@ -7,8 +7,8 @@ import { isPublicPath } from "@/lib/public-paths";
 
 export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.delete("x-threwlines-auth-user");
-  requestHeaders.delete("x-threwlines-auth-email");
+  requestHeaders.delete("x-nosterys-auth-user");
+  requestHeaders.delete("x-nosterys-auth-email");
 
   if (isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
@@ -19,8 +19,8 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const session = token ? await verifySessionToken(token) : null;
   if (session) {
-    requestHeaders.set("x-threwlines-auth-user", session.sub);
-    requestHeaders.set("x-threwlines-auth-email", session.email);
+    requestHeaders.set("x-nosterys-auth-user", session.sub);
+    requestHeaders.set("x-nosterys-auth-email", session.email);
   }
 
   if (!session && !isLogin) {

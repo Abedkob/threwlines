@@ -59,7 +59,7 @@ function ChecklistItem({
       return true;
     } catch (caught) {
       window.dispatchEvent(
-        new CustomEvent("threwlines:mutation-error", {
+        new CustomEvent("nosterys:mutation-error", {
           detail:
             caught instanceof Error
               ? caught.message
@@ -226,7 +226,7 @@ function TaskCard({
       return true;
     } catch (caught) {
       window.dispatchEvent(
-        new CustomEvent("threwlines:mutation-error", {
+        new CustomEvent("nosterys:mutation-error", {
           detail:
             caught instanceof Error
               ? caught.message
@@ -515,9 +515,9 @@ export function TasksClient() {
   useEffect(() => {
     const showError = (event: Event) =>
       setError((event as CustomEvent<string>).detail);
-    window.addEventListener("threwlines:mutation-error", showError);
+    window.addEventListener("nosterys:mutation-error", showError);
     return () =>
-      window.removeEventListener("threwlines:mutation-error", showError);
+      window.removeEventListener("nosterys:mutation-error", showError);
   }, []);
   const updateQuery = useCallback(
     (updates: Record<string, string | number>) => {
