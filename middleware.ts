@@ -1,33 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_NAME } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/token";
-
-// Exact-match endpoints that must bypass the session check.
-// Must stay narrow — anything added here is unauthenticated.
-const PUBLIC_AUTH = new Set(["/api/auth/login", "/api/auth/logout", "/api/health"]);
-
-// Path prefixes for public API surfaces. The licensing API is called by
-// third-party customer applications that carry no session cookie.
-const PUBLIC_PREFIXES = ["/api/license/v1/"];
-// The licensing API description is published for integrators, so it has to
-// be reachable without a session - otherwise fetching it returns the login
-// page and every generated client starts from a redirect.
-const PUBLIC_PATHS = ["/licensing-openapi.json", "/licensing-docs.html"];
-
-function isPublic(pathname: string): boolean {
-  if (PUBLIC_AUTH.has(pathname)) return true;
-  return (
-    PUBLIC_PATHS.includes(pathname) ||
-    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-  );
-}
+// The allow-list lives in lib/public-paths.ts so it can be unit tested as
+// behaviour. Anything it admits is reachable without a session.
+import { isPublicPath } from "@/lib/public-paths";
 
 export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete("x-threwlines-auth-user");
   requestHeaders.delete("x-threwlines-auth-email");
 
-  if (isPublic(request.nextUrl.pathname)) {
+  if (isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

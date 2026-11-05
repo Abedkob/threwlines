@@ -106,6 +106,37 @@ Repeat for each of the other two team members once you have created them.
 - **Logs**: Dokploy's log viewer shows `console.error`s from `handleError`'s internal-error branch and other server-side issues.
 - **Updating `LICENSE_ALLOWED_ORIGINS`**: edit the env var in Dokploy and redeploy.
 
+## 10. Moving to a different domain
+
+Nothing in the server is bound to a hostname. Licence tokens are signed with
+`iss: threwlines` and verified against `LICENSE_SIGNING_PUBLIC_JWK`, not against
+the URL, so **every licence already activated in the field keeps working** — a
+client that re-points at the new host and calls `validate` with its stored token
+gets a fresh token back. No re-activation, no activation slots consumed, no keys
+re-issued. The session cookie sets no `domain`, so signed-in users simply sign in
+again on the new host.
+
+What does break is any deployed client whose configured origin still points at the
+old host. Run the move in this order:
+
+1. Add the new domain in Dokploy **alongside** the old one, so the proxy requests
+   a certificate for it. Do not remove the old domain yet.
+2. Confirm the new host serves the same keys before re-pointing anything:
+   `curl https://new.example.com/api/license/v1/.well-known/jwks.json` must return
+   the same `kid` as the old host. Same key means existing tokens stay valid.
+3. Re-point clients. A client only needs its origin changed
+   (`https://new.example.com`); it reads `GET /api/license/v1` for the paths.
+4. Serve the API on **both** hostnames until every client has moved. Do not
+   redirect the old host to the new one — clients `fetch` and then parse JSON, and
+   a redirect chain that ends at an HTML page is indistinguishable from an outage.
+5. Review `LICENSE_ALLOWED_ORIGINS` only if a *browser* calls the licensing API;
+   server-to-server callers send no `Origin` and are unaffected.
+6. Check `LICENSE_TRUSTED_PROXY` if the move also changes the proxy or puts a CDN
+   in front. Without it, `clientIp()` buckets every caller as `"unknown"` and
+   per-IP rate limiting stops distinguishing callers.
+7. Retire the old domain only after logs show heartbeats arriving on the new one
+   from every client.
+
 ## What's intentionally *not* in this deploy
 
 - **No login rate limiting.** Failed logins are not throttled. For a 3-user internal CRM behind private DNS this is low urgency, but add fail2ban at the proxy layer if the DNS becomes internet-reachable.

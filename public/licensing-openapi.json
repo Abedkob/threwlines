@@ -4,7 +4,7 @@
     "title": "ThrewLines Licensing API",
     "version": "1.0.0",
     "summary": "Activate, validate and deactivate product licences.",
-    "description": "Public API for applications that ship under a ThrewLines licence.\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token.\n\n**Offline verification.** Every successful call returns an `activation_token`: an ES256 JWT you verify locally against the public key published at `/.well-known/jwks.json`. Verify it offline until `check_after`, and keep working until `offline_grace_until`. That is the intended steady state - do not call the API on every launch.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable.\n\n**Retrying.** `RATE_LIMITED` is the only code worth retrying on its own - back off and try later. `INVALID_REQUEST` means your payload is wrong and will keep failing. Everything else is a decision about the licence itself and should be surfaced to the user. A transport failure, a non-JSON body or an HTML error page is not a licence verdict: keep the last good token and fall back to offline verification until `offline_grace_until`.\n\n**Base path.** The server URL above already ends in `/api/license/v1`, so append only `licenses/activate` and friends. Joining a path that repeats the version, or one with a leading slash, silently produces a URL this API does not serve and you will get an HTML error page rather than a JSON failure."
+    "description": "Public API for applications that ship under a ThrewLines licence.\n\n**Authentication.** `activate` is unauthenticated: the licence key in the request body is the credential. `validate` and `deactivate` require the `activation_token` returned by `activate`, sent as a Bearer token.\n\n**Offline verification.** Every successful call returns an `activation_token`: an ES256 JWT you verify locally against the public key published at `/.well-known/jwks.json`. Verify it offline until `check_after`, and keep working until `offline_grace_until`. That is the intended steady state - do not call the API on every launch.\n\n**Error handling.** Branch on `code`, never on `message`. The messages are written for humans and may be reworded; the codes are stable.\n\n**Retrying.** `RATE_LIMITED` is the only code worth retrying on its own - back off and try later. `INVALID_REQUEST` means your payload is wrong and will keep failing. Everything else is a decision about the licence itself and should be surfaced to the user. A transport failure, a non-JSON body or an HTML error page is not a licence verdict: keep the last good token and fall back to offline verification until `offline_grace_until`.\n\n**Base path.** The server URL above already ends in `/api/license/v1`, so append only `licenses/activate` and friends. Joining a path that repeats the version, or one with a leading slash, silently produces a URL this API does not serve and you will get an HTML error page rather than a JSON failure. Better still, do not build paths at all: store only this deployment origin and read `GET /api/license/v1` once at startup, which returns the path of every endpoint. A client written that way needs no change when the API moves to another domain."
   },
   "servers": [
     {
@@ -19,10 +19,45 @@
     }
   ],
   "tags": [
+    { "name": "Discovery", "description": "Where the endpoints are" },
     { "name": "Licences", "description": "Activation lifecycle" },
     { "name": "Keys", "description": "Public keys for offline verification" }
   ],
   "paths": {
+    "/": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Where the licensing endpoints are",
+        "description": "Returns the path of every endpoint, so a client stores only this deployment origin (for example `https://licences.example.com`) and never builds API paths itself. Call it once at startup and cache the result. Paths are root-relative and already include `base_path`: resolve each against the origin you fetched this document from, and do not join it with a base URL of your own. Unauthenticated, and it carries no secrets.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "The endpoints this deployment serves.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Discovery" },
+                "example": {
+                  "ok": true,
+                  "service": "threwlines-licensing",
+                  "api_version": "v1",
+                  "base_path": "/api/license/v1",
+                  "endpoints": {
+                    "activate": "/api/license/v1/licenses/activate",
+                    "validate": "/api/license/v1/licenses/validate",
+                    "heartbeat": "/api/license/v1/licenses/heartbeat",
+                    "deactivate": "/api/license/v1/licenses/deactivate",
+                    "jwks": "/api/license/v1/.well-known/jwks.json"
+                  },
+                  "token": { "issuer": "threwlines", "algorithm": "ES256" },
+                  "spec": "/licensing-openapi.json",
+                  "documentation": "/licensing-docs.html"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/licenses/activate": {
       "post": {
         "tags": ["Licences"],
@@ -174,6 +209,39 @@
       }
     },
     "schemas": {
+      "Discovery": {
+        "type": "object",
+        "required": ["ok", "service", "api_version", "base_path", "endpoints", "token"],
+        "properties": {
+          "ok": { "type": "boolean", "const": true },
+          "service": { "type": "string", "const": "threwlines-licensing", "description": "Identifies the host as a ThrewLines licensing deployment. Check this before trusting the rest of the document." },
+          "api_version": { "type": "string", "description": "The version segment of `base_path`. A client built for one major version should refuse to continue if this is not the version it expects." },
+          "base_path": { "type": "string", "description": "Where the API is mounted beneath the origin. Already present at the start of every endpoint path - it is given separately for display and version checks, not for you to join." },
+          "endpoints": {
+            "type": "object",
+            "description": "Root-relative request paths. Resolve each against the origin this document was fetched from.",
+            "required": ["activate", "validate", "heartbeat", "deactivate", "jwks"],
+            "properties": {
+              "activate": { "type": "string" },
+              "validate": { "type": "string" },
+              "heartbeat": { "type": "string" },
+              "deactivate": { "type": "string" },
+              "jwks": { "type": "string" }
+            }
+          },
+          "token": {
+            "type": "object",
+            "description": "What to expect in an activation token when verifying it offline.",
+            "required": ["issuer", "algorithm"],
+            "properties": {
+              "issuer": { "type": "string", "description": "The value of the token `iss` claim." },
+              "algorithm": { "type": "string", "description": "The JWS algorithm to verify with. Pin this; never accept an algorithm from the token header alone." }
+            }
+          },
+          "spec": { "type": "string", "description": "Path to this OpenAPI document." },
+          "documentation": { "type": "string", "description": "Path to the rendered reference page." }
+        }
+      },
       "ActivateRequest": {
         "type": "object",
         "required": ["license_key", "installation_id", "product_code"],

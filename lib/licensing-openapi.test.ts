@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { LICENSE_API_BASE_PATH, licenseDiscovery } from "./license-discovery.ts";
+import { isPublicPath } from "./public-paths.ts";
 
 // The spec is published to integrators, so it has to describe the routes that
 // actually exist. These tests compare it against the route tree and the error
@@ -114,15 +116,16 @@ test("the spec is reachable without a session", () => {
   // It lives under public/, but middleware intercepts everything that is not
   // an image or a _next asset - so a .json file there redirects to /login
   // unless it is allowed explicitly. Integrators fetch this anonymously.
+  assert.equal(
+    isPublicPath("/" + SPEC_PATH.replace("public/", "")),
+    true,
+    "the spec must be an explicitly public path, or fetching it returns the login page",
+  );
+  // And the allow-list must be the one middleware consults.
   const middleware = readFileSync("middleware.ts", "utf8");
   assert.match(
     middleware,
-    /PUBLIC_PATHS[\s\S]{0,200}licensing-openapi\.json/,
-    "the spec must be an explicitly public path, or fetching it returns the login page",
-  );
-  assert.match(
-    middleware,
-    /PUBLIC_PATHS\.includes\(pathname\)/,
+    /isPublicPath\(request\.nextUrl\.pathname\)/,
     "the public-path list must actually be consulted",
   );
 });
@@ -138,10 +141,9 @@ test("the rendered docs page is public, pinned and integrity-checked", () => {
   assert.match(script, /crossorigin="anonymous"/, "SRI requires crossorigin on a cross-origin script");
   assert.match(script, /redoc@\d+\.\d+\.\d+\//, 'the renderer version must be pinned, not "latest"');
 
-  const middleware = readFileSync("middleware.ts", "utf8");
-  assert.match(
-    middleware,
-    /PUBLIC_PATHS[\s\S]{0,200}licensing-docs\.html/,
+  assert.equal(
+    isPublicPath("/licensing-docs.html"),
+    true,
     "the docs page must be public, or it redirects integrators to /login",
   );
 });
@@ -214,4 +216,31 @@ test("response timestamps are documented in the representation actually sent", (
   // The claims inside the JWT keep the numeric form.
   assert.equal(spec.components.schemas.TokenClaims.properties.check_after.type, "integer");
   assert.equal(spec.components.schemas.TokenClaims.properties.grace_until.type, "integer");
+});
+
+test("the discovery document is published and needs no credential", () => {
+  // It is the first call a client makes, before it holds any token, and it is
+  // what lets a client store an origin instead of a full base URL.
+  const documented = spec.paths["/"];
+  assert.ok(documented?.get, "GET on the base path is not documented");
+  assert.deepEqual(documented.get.security, [], "discovery must be unauthenticated");
+});
+
+test("every endpoint the discovery document advertises is a documented path", () => {
+  // Otherwise a client follows the document to a route the spec never
+  // described, and a generated client has no model for the response.
+  const relative = Object.values(licenseDiscovery().endpoints).map(
+    (path) => path.replace(LICENSE_API_BASE_PATH, "") || "/",
+  );
+  const missing = relative.filter((path) => !spec.paths[path]);
+  assert.deepEqual(missing, [], `advertised but undocumented: ${missing.join(", ")}`);
+});
+
+test("the spec's base path is the one the discovery document advertises", () => {
+  // servers[0].url carries it as "https://{host}/api/license/v1". If these
+  // drift, the two halves of the document disagree about where the API lives.
+  assert.ok(
+    spec.servers[0].url.endsWith(LICENSE_API_BASE_PATH),
+    `servers[0].url is ${spec.servers[0].url}, which does not end with ${LICENSE_API_BASE_PATH}`,
+  );
 });
