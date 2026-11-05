@@ -10,12 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#F6F3EE",
     theme_color: "#1A1714",
     icons: [
-      {
-        src: "/nosterys-mark.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any",
-      },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
     ],
   };
 }

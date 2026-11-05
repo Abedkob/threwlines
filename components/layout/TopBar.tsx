@@ -31,7 +31,7 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="mobile-shell-brand" aria-label="Nosterys Vault">
-        <span className="brand-logo-frame p-1" aria-hidden="true"><img src="/nosterys-sail.svg" alt="" className="scale-100 object-contain" /></span>
+        <span className="brand-logo-frame p-1" aria-hidden="true"><img src="/nosterys-mark.png" alt="" className="scale-100 object-contain" /></span>
         <span><strong>Vault</strong><small>nosterys</small></span>
       </div>
       <div className="topbar-copy">

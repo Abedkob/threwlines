@@ -57,7 +57,7 @@ export default function LoginPage() {
       <header className="login-topbar">
         <div className="login-brand">
           <span className="brand-logo-frame login-logo-frame p-1" aria-hidden="true">
-            <img src="/nosterys-sail.svg" alt="" className="scale-100 object-contain" />
+            <img src="/nosterys-mark.png" alt="" className="scale-100 object-contain" />
           </span>
           <span className="login-brand-copy">
             <strong>Nosterys</strong>
